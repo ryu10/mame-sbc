@@ -97,7 +97,9 @@ This message is shown once a day. To disable it please create the
 kuma@LAURELEY:~$ 
 ```
 
-### 必要なパッケージをインストールする
+## 2. 必要なパッケージをインストールする
+
+### 2.1. mame サイトを確認する。
 
 mame 本家のドキュメント、"Compiling MAME"(https://docs.mamedev.org/initialsetup/compilingmame.html)を見て確認しておく。
 
@@ -117,6 +119,8 @@ sudo apt-get install git build-essential python3 libsdl2-dev libsdl2-ttf-dev lib
 
 とあります。これは `apt-get install`コマンドでインストールするためのコマンド列なので、`git ...` 以下のパッケージをインストールすることになります。`gcc`, `GUN make` 入っていないけど大丈夫なのかな?
 
+### 2.2. gcc, GNU make のインストール
+
 WSLインストール直後の状態で、
 
 ```
@@ -133,14 +137,16 @@ sudo apt install make-guile  # version 4.3-4.1build1
 kuma@LAURELEY:~$ 
 ```
 
-gcc も GNU make も入っていませんね。必要なのは明らかなので、まず、gcc をインストールする。バージョンがだめなら GCC をビルドしなくてはならない。
+gcc も GNU make も入っていませんね。
 
-
+まず、gcc をインストールする。インストールしてバージョンを確認する。`sudo apt-get install`コマンドを使う。
 
 ```
 kuma@LAURELEY:~$ sudo apt-get install gcc
 [sudo] password for kuma:
 ```
+
+パスワードを聞いてくるので、さきほどの(WSL をインストールした際に設定した)パスワードを入力する。
 
 ```
 Reading package lists... Done
@@ -169,4 +175,288 @@ After this operation, 196 MB of additional disk space will be used.
 Do you want to continue? [Y/n] 
 ```
 
+ぐちゃぐちゃ言って止まっているが、`Do you want to continue? [Y/n]` と、継続するかどうかを聞かれている。ためらわず"Y"を入力する。
+
+バージョンを確認する。`gcc --version` とマイナス2個オプションをたたく。
+
+```
+kuma@LAURELEY:~$ gcc --version
+gcc (Ubuntu 13.2.0-23ubuntu4) 13.2.0
+Copyright (C) 2023 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+kuma@LAURELEY:~$
+```
+
+バージョンは 13.2.0、これなら大丈夫ですね。
+
+GNU make をインストールする。Ubuntu の場合、何もいわず make をインストールすると GNU make が入る。
+
+`sudo apt-get install make` でよい。
+
+```
+kuma@LAURELEY:~$ sudo apt-get install make
+```
+
+こんどは `Do you want to continue?`と聞かれない。インストールサイズが小さくストレージあふれの危険が少ないときは確認せずに勝手に進めてしまうのだと思っている。
+
+いちおうバージョンも確認しておこうか。GNU make は進化速度がそれほどでもなく、最新版にこだわらなくても大丈夫だと思っているのだが。
+
+```
+kuma@LAURELEY:~$ make --version
+GNU Make 4.3
+Built for x86_64-pc-linux-gnu
+Copyright (C) 1988-2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+```
+
+### 2.3. mame ビルドに必要なパッケージのインストール
+
+ついに、パッケージたくさんインストールするときが来た。
+
+````
+sudo apt-get install git build-essential python3 libsdl2-dev libsdl2-ttf-dev libfontconfig-dev libpulse-dev qtbase5-dev qtbase5-dev-tools qtchooser qt5-qmake
+````
+
+182パッケージがあっさり入った。
+
+## 3. mame-sbc リポジトリの導入とビルド
+
+### 3.1 リポジトリの導入
+
+github.com のリポジトリである。`https://github.com/tendai22/mame-sbc/`をブラウザで開くと、簡単な説明を見ることができる。いきなり出てくるのは英語版 README.md だが、日本語版 README_jp.md ファイルへのリンクも置いてあります。
+
+<img src="img/ch02-mamesbc-site-readme-jp.png">
+
+リポジトリのダウンロードには git clone コマンドを使います。その下にディレクトリを掘ってその中にダウンロードしてくれます。デフォルトは、`mame-sbc`ディレクトリです。
+
+```
+kuma@LAURELEY:~$ git clone https://github.com/tendai22/mame-sbc.git
+Cloning into 'mame-sbc'...
+remote: Enumerating objects: 17990, done.
+remote: Counting objects: 100% (16/16), done.
+remote: Compressing objects: 100% (15/15), done.
+remote: Total 17990 (delta 2), reused 15 (delta 1), pack-reused 17974 (from 1)
+Receiving objects: 100% (17990/17990), 153.31 MiB | 11.68 MiB/s, done.
+Resolving deltas: 100% (4372/4372), done.
+Updating files: 100% (17169/17169), done.
+kuma@LAURELEY:~$
+```
+
+ダウンロードサイズ 153MB あります。結構大きくてごめんなさい。使っていない・使わないファイルも多いと思うのですが、切り落とすには手間暇がかかるので、今はご容赦ください。
+
+あとは、cd mame-sbc してから make でOKです。
+
+ごめんなさい。一つ抜けていた。この make 最後で失敗します。
+
+```
+Archiving libemu.a...
+Compiling src/emuz80/emuz80.cpp...
+Compiling src/emuz80/main.cpp...
+Compiling src/emuz80/osd_linux.c...
+Linking emuz80...
+/usr/bin/ld: cannot find -lbgfx: No such file or directory
+collect2: error: ld returned 1 exit status
+make[2]: *** [emuz80.make:266: ../../../../../emuz80] Error 1
+make[1]: *** [Makefile:94: emuz80] Error 2
+make: *** [makefile:1294: linux_x64] Error 2
+kuma@LAURELEY:~/mame-sbc$
+```
+
+`/usr/bin/ld: cannot find -lbgfx: No such file or directory`、つまり、`-lbgfx` がない。これは、libbgfx.a が作られていないので存在しないということ。
+
+mame からそぎ落とす時点で libbgfx.a を作らない(bgfx機能を使わない)とそぎ落としたのですが、最終の emuz80 実行可能バイナリ生成時に libbgfx.a をリンクしたいと言っているのです。emuz80.make ファイルにある `-lbgfx` を消せば収まる。このオプションが入らないように emuz80.make ファイルを生成するように調整すればよいのですが、どこでこのオプションが入るのかが追っかけ切れていません。
+
+現在は、強引に emuz80.make ファイルから強引に消しています。シェルスクリプト `erase_lopts.sh`を実行すると要らんオプションを消してくれます。再度 make コマンドをたたくと、バイナリ emuz80 が生成されます。
+
+```
+kuma@LAURELEY:~/mame-sbc$ sh erase_lopts.sh
+kuma@LAURELEY:~/mame-sbc$ make
+GCC 13.2.0 detected
+fatal: No names found, cannot describe anything.
+Linking emuz80...
+kuma@LAURELEY:~/mame-sbc$
+```
+
+これで mame-sbc (emuz80) のビルドが完了しました。
+
+## 4. 動作確認
+
+できあがった、`emuz80` を実行してみます。
+
+```
+kuma@LAURELEY:~/mame-sbc$ ./emuz80
+emuz80_state: constructor
+warning_txt = -1
+machine_reset
+
+�Z80 BASIC Ver 4.7b
+Copyright (C) 1978 by Microsoft
+24190 Bytes free
+Ok
+```
+
+`./emuz80` と叩くとエミュレータが起動し、そのまま EMUBASIC が走り、Ok プロンプトが出ます。メッセージ先頭の謎文字は気にしないでください。バグですが、見た目だけの問題と考えて放置しています。
+
+> 現在、このコマンドをきれいに終了させる機能はありません。乱暴ですが、 Ctrl-\(コントロールキーと'\'(バックスラッシュキーまたは円記号キー))を押してプロセスを強引に殺してください。
+
+```
+Quit (core dumped)
+kuma@LAURELEY:~/mame-sbc$
+```
+
+ここで、Ctrl-O (コントロールキーを押しながら'O'(オー)キーを押す)を押しましょう。なんかぐじゃぐじゃ出てきますが、この間に ASCIIART.BAS をロードしています。
+
+```
+Ok
+/--
+-
+/
+|/
+|
+
+```
+
+リターンを数回たたいてから "LIST" コマンドを入力してください。ASCIIART.BAS プログラムが入っていることがわかります。リスト表示が途中で止まるかもしれませんが、リターンキーを押すと最後まで表示されます。
+
+```
+LIST
+
+5 PRINT CHR$(11)
+10 FOR Y=-12 TO 12
+20 FOR X=-39 TO 39
+30 CA=X*0.0458
+40 CB=Y*0.08333
+50 A=CA
+60 B=CB
+70 FOR I=0 TO 15
+80 T=A*A-B*B+CA
+90 B=2*A*B+CB
+100 A=T
+110 IF (A*A+B*B)>4 THEN GOTO 200
+120 NEXT I
+130 PRINT " ";
+140 GOTO 210
+200 IF I>9 THEN I=I+7
+205 PRINT CHR$(48+I);
+210 NEXT X
+220 PRINT
+230 NEXT Y
+240 PRINT CHR$(12)
+Ok
+```
+
+`RUN` コマンドを入力して実行してみましょう。
+
+```
+RUN
+
+
+000000011111111111111111122222233347E7AB322222111100000000000000000000000000000
+000001111111111111111122222222333557BF75433222211111000000000000000000000000000
+000111111111111111112222222233445C      643332222111110000000000000000000000000
+011111111111111111222222233444556C      654433332211111100000000000000000000000
+11111111111111112222233346 D978 BCF    DF9 6556F4221111110000000000000000000000
+111111111111122223333334469                 D   6322111111000000000000000000000
+1111111111222333333334457DB                    85332111111100000000000000000000
+11111122234B744444455556A                      96532211111110000000000000000000
+122222233347BAA7AB776679                         A32211111110000000000000000000
+2222233334567        9A                         A532221111111000000000000000000
+222333346679                                    9432221111111000000000000000000
+234445568  F                                   B5432221111111000000000000000000
+                                              864332221111111000000000000000000
+234445568  F                                   B5432221111111000000000000000000
+222333346679                                    9432221111111000000000000000000
+2222233334567        9A                         A532221111111000000000000000000
+122222233347BAA7AB776679                         A32211111110000000000000000000
+11111122234B744444455556A                      96532211111110000000000000000000
+1111111111222333333334457DB                    85332111111100000000000000000000
+111111111111122223333334469                 D   6322111111000000000000000000000
+11111111111111112222233346 D978 BCF    DF9 6556F4221111110000000000000000000000
+011111111111111111222222233444556C      654433332211111100000000000000000000000
+000111111111111111112222222233445C      643332222111110000000000000000000000000
+000001111111111111111122222222333557BF75433222211111000000000000000000000000000
+000000011111111111111111122222233347E7AB322222111100000000000000000000000000000
+
+
+Ok
+```
+
+みんな大好きアスキーマンデルブロが表示されます。所要時間はだいたい1分51秒(111sec)です。Z80 クロック的には10MHz相当でしょうか。
+
+コードでは Z80 CPU クロック 40MHz 指定しているのですが、とてもとてもそこまでは出ていません。
+
+`makefile` の先頭で TARGET に emuz80 指定しているところで sbc8080 を指定してみましょう。再度 make コマンドをたたきます。
+
+```
+# TARGET = mame
+TARGET = sbc8080
+# TARGET = emuz80
+```
+
+再度 '-lbgfxがない' と言われますので、再度 `sh erase_lopts.sh` を実行して、再度 make してください。今度は `sbc8080` ファイルが生成されます。
+
+`./sbc8080` と叩いて sbc8080 エミュレータを起動します。またもや Gran's BASIC が起動します。
+
+```
+kuma@LAURELEY:~/mame-sbc$ ./sbc8080
+sbc8080_state: constructor
+WATCH_ADDR: 8043
+warning_txt = -1
+machine_reset
+
+INTEL8080 BASIC Ver 4.7b
+Copyright (C) 1978 by Microsoft
+32382 Bytes free
+Ok
+```
+
+再度、Ctrl-O をたたきましょう。今度は ASCIIART.BAS のリストが表示されます。
+
+しばらくだんまりとなりますが、あきらめずにリターンキーや、LISTコマンドをたたいてみてください。20sec 後ぐらいに Ok が返ってきます。
+
+```
+open asciiart
+m_fd: 7
+5 PRINT CHR$(11)
+10 FOR Y=-12 TO 12
+20 FOR X=-39 TO 39
+30 CA=X*0.0458
+40 CB=Y*0.08333
+50 A=CA
+60 B=CB
+70 FOR I=0 TO 15
+80 T=A*A-B*B+CA
+90 B=2*A*B+CB
+100 A=T
+110 IF (A*A+B*B)>4 THEN GOTO 200
+120 NEXT I
+130 PRINT " ";
+140 GOTO 210
+200 IF I>9 THEN I=I+7
+205 PRINT CHR$(48+I);
+210 NEXT X
+220 PRINT
+230 NEXT Y
+240 PRINT CHR$(12)
+Ok
+```
+
+`RUN` で ASCIIART.BAS を実行してみます。今度は 60sec で完走します。
+
+```
+(途中省略)
+000001111111111111111122222222333557BF75433222211111000000000000000000000000000
+000000011111111111111111122222233347E7AB322222111100000000000000000000000000000
+time: 60074msec
+
+Ok
+```
+
+sbc8080 の Z80エミュレータのクロック周波数は20MHz を指定しているので、クロック相当の実行速度といえます。いい感じです。
+
+> SBC8080 のシリアルI/Oドライバは、Ctrl-K(CHR$(11))を出力すると計時開始で、Ctrl-L(CHR$(12))を出力すると、計時終了、計時時間を msec 単位で出力するようになっています。
 
