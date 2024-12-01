@@ -1,6 +1,7 @@
 # mame-sbc ... A shrunk mame-package for SBC/RetroCPU developers
 
-> [Japanese README is here](README_ja.md)
+> * [Japanese README is here](README_ja.md)
+> * [Install & Run process is here(Sorry, Japanese only)](INSTALL.md)
 
 A trial to build a SBC emulator, with CPU/IO companion processor Single Board Computer(SBC).  Theare two key items, CPU, and a serial interface for SBC console.  No video/audio devices are needed, therefore omitted.  Floppy software emulator on SD card are appreciated, so far not yet be ready.
 
