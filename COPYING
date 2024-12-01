@@ -1,3 +1,17 @@
+mame-sbc
+Copyright (C) 2024 Norihiro Kumagai
+
+This software is derived from MAME, its original COPYING resides the following part of this COPYING file.
+
+The copyright of my modification/creation part of the source code is BSD-3-clause. 
+
+> // license:BSD-3-Clause  
+> // copyright-holders:Jonathan Gevaryahu, Robbbert, Miodrag Milanovic
+
+Original MAME copyright notice is as follows;
+
+===========================================
+
 MAME is a registered trademark of Gregory Ember.  Other trademarks are
 property of their respective owners.
 
