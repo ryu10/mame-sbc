@@ -3277,6 +3277,16 @@ makefile の TARGET = emuz80 を定義してビルド。src/emuz80 が存在し�
 
 ビルドして実行できたが emuz80 BASIC が動かない。ROM イメージの再調整が必要。
 
+## v0.991 以後の更新
+
+いくつか消しまくった
+
+```
+git rm -rf attic
+git rm -rf artwork
+git rm -rf bgfx
+git rm -rf hash hlsl
+```
 
 
 
