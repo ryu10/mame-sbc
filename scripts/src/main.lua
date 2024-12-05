@@ -191,7 +191,7 @@ end
 		}
 	end
 	links {
-		"bgfx",
+		--"bgfx",
 		"bimg",
 		"bx",
 		"ocore_" .. _OPTIONS["osd"],
