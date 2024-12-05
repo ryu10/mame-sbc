@@ -271,9 +271,7 @@ Linking emuz80...
 kuma@LAURELEY:~/mame-sbc$
 ```
 
-最後はこんな感じで終わります。
-
-`mame-sbc` (`emuz80`) のビルドが完了しました。`mame-sbc` ディレクトリ直下に `emuz80` 実行可能ファイルが生成されています。
+mame-sbc (emuz80) のビルドが完了しました。mame-sbc ディレクトリ直下に emuz80 実行可能ファイルが生成されています。
 
 ## 4. 動作確認
 
