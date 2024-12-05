@@ -250,38 +250,30 @@ kuma@LAURELEY:~$
 
 あとは、cd mame-sbc してから make でOKです。
 
-ごめんなさい。一つ抜けていた。この make 最後で失敗します。
+CPUコア数に応じて、-j5 (4コアの場合), -j9 (8コアの場合) オプションを指定すると、5本/9本並列コンパイルするので雑魚さばきが早くなります。CPU利用率が100%に張り付くでしょうが。
 
 ```
+$ make -j9
+```
+
+最初に makefile が生成されてから、emu.h のプリコンパイルを行い、そのあと並行コンパイルが始まります。数分(数十分?)でビルドが完了します。
+
+```
+....
+Compiling src/emu/xtal.cpp...
+Compiling src/emu/rendfont.cpp...
+Compiling src/emu/rendlay.cpp...
 Archiving libemu.a...
 Compiling src/emuz80/emuz80.cpp...
 Compiling src/emuz80/main.cpp...
 Compiling src/emuz80/osd_linux.c...
 Linking emuz80...
-/usr/bin/ld: cannot find -lbgfx: No such file or directory
-collect2: error: ld returned 1 exit status
-make[2]: *** [emuz80.make:266: ../../../../../emuz80] Error 1
-make[1]: *** [Makefile:94: emuz80] Error 2
-make: *** [makefile:1294: linux_x64] Error 2
 kuma@LAURELEY:~/mame-sbc$
 ```
 
-`/usr/bin/ld: cannot find -lbgfx: No such file or directory`、つまり、`-lbgfx` がない。これは、libbgfx.a が作られていないので存在しないということ。
+最後はこんな感じで終わります。
 
-mame からそぎ落とす時点で libbgfx.a を作らない(bgfx機能を使わない)とそぎ落としたのですが、最終の emuz80 実行可能バイナリ生成時に libbgfx.a をリンクしたいと言っているのです。emuz80.make ファイルにある `-lbgfx` を消せば収まる。このオプションが入らないように emuz80.make ファイルを生成するように調整すればよいのですが、どこでこのオプションが入るのかが追っかけ切れていません。
-
-現在は、強引に emuz80.make ファイルから強引に消しています。シェルスクリプト `erase_lopts.sh`を実行すると要らんオプションを消してくれます。再度 make コマンドをたたくと、バイナリ emuz80 が生成されます。
-
-```
-kuma@LAURELEY:~/mame-sbc$ sh erase_lopts.sh
-kuma@LAURELEY:~/mame-sbc$ make
-GCC 13.2.0 detected
-fatal: No names found, cannot describe anything.
-Linking emuz80...
-kuma@LAURELEY:~/mame-sbc$
-```
-
-これで mame-sbc (emuz80) のビルドが完了しました。
+`mame-sbc` (`emuz80`) のビルドが完了しました。`mame-sbc` ディレクトリ直下に `emuz80` 実行可能ファイルが生成されています。
 
 ## 4. 動作確認
 
@@ -301,7 +293,7 @@ Ok
 
 `./emuz80` と叩くとエミュレータが起動し、そのまま EMUBASIC が走り、Ok プロンプトが出ます。メッセージ先頭の謎文字は気にしないでください。バグですが、見た目だけの問題と考えて放置しています。
 
-> 現在、このコマンドをきれいに終了させる機能はありません。乱暴ですが、 Ctrl-\(コントロールキーと'\'(バックスラッシュキーまたは円記号キー))を押してプロセスを強引に殺してください。
+> 現在、このコマンドをきれいに終了させる機能はありません。乱暴ですが、 Ctrl-\\(コントロールキーと'\\'(バックスラッシュキーまたは円記号キー))を押してプロセスを強引に殺してください。
 
 ```
 Quit (core dumped)
