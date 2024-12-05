@@ -3282,11 +3282,22 @@ makefile の TARGET = emuz80 を定義してビルド。src/emuz80 が存在し�
 いくつか消しまくった
 
 ```
+git rm -rf android-project
 git rm -rf attic
 git rm -rf artwork
 git rm -rf bgfx
 git rm -rf hash hlsl
 ```
+
+ついに '-lbgfx' を出さないようにした。
+
+scripts/src/mame.lua に "bgfx" オプションを指定する行があるので、それをコメントアウトした。
+
+これでタグ v0.992 を打った。
+
+
+
+
 
 
 
