@@ -60,9 +60,9 @@ void sbc6809_state::machine_reset()
 	// memcpy(m_main_ram+0xe000, sbc6809_binary, sizeof sbc6809_binary);
 	#ifdef BASIC9
 	memcpy(m_main_ram+0x70, sbc6809_b0_binary, sizeof sbc6809_b0_binary);
-	fprintf(stderr, "memcpy: %ld bytes to main_rom\n", sizeof sbc6809_b0_binary);
+	fprintf(stderr, "memcpy: %ld bytes to main_ram\n", sizeof sbc6809_b0_binary);
 	memcpy(m_main_rom, sbc6809_b1_binary, sizeof sbc6809_b1_binary);
-	fprintf(stderr, "memcpy: %ld bytes to main_ram\n", sizeof sbc6809_b1_binary);
+	fprintf(stderr, "memcpy: %ld bytes to main_rom\n", sizeof sbc6809_b1_binary);
 	#endif
 
 	fprintf(stderr, "reset vector: %x %x \n", m_main_rom[0xfffe - 0xe000], m_main_rom[0xffff - 0xe000]);
