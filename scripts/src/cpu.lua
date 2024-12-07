@@ -965,17 +965,17 @@ end
 
 if CPUS["M6800"] then
 	files {
---		MAME_DIR .. "src/devices/cpu/m6800/m6800.cpp",
---		MAME_DIR .. "src/devices/cpu/m6800/m6800.h",
---		MAME_DIR .. "src/devices/cpu/m6800/m6801.cpp",
---		MAME_DIR .. "src/devices/cpu/m6800/m6801.h",
---		MAME_DIR .. "src/devices/cpu/m6800/6800ops.hxx",
+		MAME_DIR .. "src/devices/cpu/m6800/m6800.cpp",
+		MAME_DIR .. "src/devices/cpu/m6800/m6800.h",
+		MAME_DIR .. "src/devices/cpu/m6800/m6801.cpp",
+		MAME_DIR .. "src/devices/cpu/m6800/m6801.h",
+		MAME_DIR .. "src/devices/cpu/m6800/6800ops.hxx",
 	}
 end
 
 if opt_tool(CPUS, "M6800") then
---	table.insert(disasm_files , MAME_DIR .. "src/devices/cpu/m6800/6800dasm.cpp")
---	table.insert(disasm_files , MAME_DIR .. "src/devices/cpu/m6800/6800dasm.h")
+	table.insert(disasm_files , MAME_DIR .. "src/devices/cpu/m6800/6800dasm.cpp")
+	table.insert(disasm_files , MAME_DIR .. "src/devices/cpu/m6800/6800dasm.h")
 end
 
 --------------------------------------------------
