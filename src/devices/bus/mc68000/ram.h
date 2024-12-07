@@ -33,7 +33,7 @@ private:
 };
 
 // device type definition
-8000_RAM, mc68000_ram_device)
+DECLARE_DEVICE_TYPE(MC68000_RAM, mc68000_ram_device)
 
 
 #endif // MAME_BUS_MC68000_RAM_H

@@ -2,7 +2,7 @@
 // copyright-holders:Frank Cringle
 
 // sbc6809 binary
-// source code: see sbc6809.m6800
+// source code: see sbc6809.mc6809
 #define BASIC9 1
 
 #ifdef BASIC9

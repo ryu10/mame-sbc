@@ -10,7 +10,7 @@
 
 #include "emu.h"
 // #include "cpu/z80/z80.h"
-#include "cpu/m6800/m6800.h"
+#include "cpu/m6809/m6809.h"
 #include "sbc6809.h"
 #include "interface.h"
 #include "osd.h"
@@ -160,7 +160,7 @@ void sbc6809_state::sbc6809(machine_config &config)
 	/* basic machine hardware */
 	//Z80(config, m_maincpu, XTAL(3'579'545));
 	// Z80(config, m_maincpu, XTAL(40'000'000));
-	M6800(config, m_maincpu, XTAL(16'000'000 / 4));
+	MC6809(config, m_maincpu, XTAL(64'000'000 / 4));
 	m_maincpu->set_addrmap(AS_PROGRAM, &sbc6809_state::m68_mem);
 	// m_maincpu->set_addrmap(AS_IO, &sbc6809_state::io_map);
 }

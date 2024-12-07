@@ -1,6 +1,7 @@
 STANDALONE = true
 
-CPUS["M6800"] = true
+-- CPUS["MC6809"] = true
+CPUS["M6809"] = true
 
 -- MACHINES["Z80DAISY"] = true
 
