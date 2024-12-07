@@ -33,6 +33,10 @@ https://github.com/tendai22/mame-sbc/compare/main...ryu10:mame-sbc:sbc6800
 
 ## sbc6809 ブランチ
 
+makefile の `TARGET=sbc6809` 行を有効にして make します。
+
+### ソースコード変更点
+
 * sbc6800 と同じ要領で記述
     * RESET ピン操作しなくても起動する
 
