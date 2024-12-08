@@ -1,16 +1,16 @@
 # sbc6800 と sbc6809 のビルド
 
-(この項 @ryu10)
+この項は @ryu10 が記述しました。
 
 ## 環境
 
 * Ubuntu 24.04LTS 
 * Parallels 14
-* Intel Mac mini 2018
+* Intel Mac mini
 
 ## リポジトリのフォーク
 
-@tendai22 様の 2024/12/5 版 (v0.992)からフォーク
+@tendai22 様の v0.992 (2024/12/5 版) からフォークしました。
 
 https://github.com/tendai22/mame-sbc
 
@@ -27,7 +27,7 @@ makefile の `TARGET=sbc6800` 行を有効にして make します。
 * scripts 以下の lua ビルドスクリプトを編集
 * その他
 
-差分リンク
+詳細は下記の差分リンクをご覧ください。
 
 https://github.com/tendai22/mame-sbc/compare/main...ryu10:mame-sbc:sbc6800
 
