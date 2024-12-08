@@ -62,7 +62,6 @@ public:
 	static bool standalone();
 };
 
-
 class machine_manager
 {
 protected:
