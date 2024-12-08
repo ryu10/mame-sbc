@@ -7,12 +7,16 @@ A trial to build a SBC emulator, with CPU/IO companion processor Single Board Co
 
 Now I am trying to prepare a shrunk mame package with various CPU and some.
 
-So far I have prepared two examples of SBC emulations, `emuz80` and `sbc8080`, made by `@vintagechips` (Den'noh-Densetsu).  Both are famous among RetroCPU guys. 
+So far I have prepared four examples of SBC emulations, `emuz80`, `sbc8080`, `sbc6800`, and `sbc6809`, made by `@vintagechips` (Den'noh-Densetsu). All of them are famous among RetroCPU guys.
+
+Two of the four emulators, `sbc6800` and `sbc6809` are developed by @ryu10, and he kindly approved to be merged to my repository, thanks.
 
 <img src="img/README-running-sample.png">
 
 > emuz80: [an article](https://vintagechips.wordpress.com/2022/03/05/emuz80_reference/) and its related [data repository](https://github.com/vintagechips/emuz80)  
-> sbc8080: [an article](https://vintagechips.wordpress.com/2018/06/24/sbc8080-cpu%E3%83%AB%E3%83%BC%E3%82%BA%E3%82%AD%E3%83%83%E3%83%88/), [document PDF](http://www.amy.hi-ho.ne.jp/officetetsu/storage/sbc8080_techdata.pdf), and [a datapack](http://www.amy.hi-ho.ne.jp/officetetsu/storage/sbc8080_datapack.zip)
+> sbc8080: [an article](https://vintagechips.wordpress.com/2018/06/24/sbc8080-cpu%E3%83%AB%E3%83%BC%E3%82%BA%E3%82%AD%E3%83%83%E3%83%88/), [document PDF](http://www.amy.hi-ho.ne.jp/officetetsu/storage/sbc8080_techdata.pdf), and [a datapack](http://www.amy.hi-ho.ne.jp/officetetsu/storage/sbc8080_datapack.zip)  
+> sbc6800: [an article](https://vintagechips.wordpress.com/2017/12/05/sbc6800%E3%83%AB%E3%83%BC%E3%82%BA%E3%82%AD%E3%83%83%E3%83%88/), [document PDF](http://www.amy.hi-ho.ne.jp/officetetsu/storage/sbc6800_techdata.pdf), and [a datapack](http://www.amy.hi-ho.ne.jp/officetetsu/storage/sbc6800_datapack.zip).  
+> sbc6809: [an article](https://vintagechips.wordpress.com/2017/12/05/sbc6809%E3%83%AB%E3%83%BC%E3%82%BA%E3%82%AD%E3%83%83%E3%83%88/), [document PDF](http://www.amy.hi-ho.ne.jp/officetetsu/storage/sbc6809_techdata.pdf), and [a datapack](http://www.amy.hi-ho.ne.jp/officetetsu/storage/sbc6809_datapack.zip).  
 
 # Original
 
