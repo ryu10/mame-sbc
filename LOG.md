@@ -3301,6 +3301,449 @@ scripts/src/mame.lua に "bgfx" オプションを指定する行があるので
 
 sbc6800, sbc6809 は電脳伝説さんのSBCである、SBC6800, SBC6809 をエミュレートしたものです。
 
+## I8251 を使うための調査
 
+`~/mame` 配下のフルセットmameでソースコードを漁る。
 
+`src/devices/bus/a2bus/byte8251.cpp`: 
+
+```
+void a2bus_byte8251_device::device_add_mconfig(machine_config &config)
+{
+	I8251(config, m_usart, 1021800); // CLK tied to ϕ1 signal from bus pin 38
+	m_usart->txd_handler().set("rs232", FUNC(rs232_port_device::write_txd));
+
+	MM5307AA(config, m_brg, DERIVED_CLOCK(1, 8));
+	m_brg->output_cb().set(m_usart, FUNC(i8251_device::write_txc));
+	m_brg->output_cb().append(m_usart, FUNC(i8251_device::write_rxc));
+
+	rs232_port_device &rs232(RS232_PORT(config, "rs232", default_rs232_devices, nullptr));
+	rs232.rxd_handler().set(m_usart, FUNC(i8251_device::write_rxd));
+}
+```
+
+AppleIIの 8251カードらしい。
+
+* `I8251(config, m_usart, 1021800);`  
+  m_usart を I8251デバイスで埋める。1021800はクロックだろう。
+* `m_usart->txd_handler().set("rs232", FUNC(rs232_port_device::write_txd));`  
+  i8251の下位層に rs232c_port_device を置ける。  
+  ハンドラをセットできるらしい。8251 で TXD 書き込み時のハンドラに `rs232c_port_device::write_txd` が登録できるのだろう。第1引数が文字列の時は "rs232c" の名前で当てられるのだろう。
+* `rs232_port_device &rs232(RS232_PORT(config, "rs232", default_rs232_devices, nullptr));`  
+  rs232 が実体なのだろうが、write_txd ハンドラ登録は実体生成に先立って行われている。なので名前 "rs232c" で当てられるのだろうと推察。
+
+以上まとめると、
+
+* I8251の下側にrs232_port_device を置く。mameの場合はビデオ端末画面とキー入力につながっているのだろう。
+* キー入力は、rs232_port_device 内でイベントが湧き、i8251_device::write_rxd を呼び出して上位層 I8251 につなぐ。
+* ビデオ出力は、i8251_device 内でTXDレジスタ書き込みが起こり(i8251_device::txd_handlerが呼び出される)、 txd_handler の中で rs232c_port_device::write_txd が呼び出され、下位層にデータが渡される。
+
+下位層デバイスでは、
+
+* キー入力があれば、 `i8251_device::write_rxd` を呼び出してデータを渡す。
+* 画面出力は、 `m_uart->txd_handler().set("rs232", FUNC(rs232_port_device::write_txd))` で `write_txd` を呼び出してもらうように手配し、 `write_txd` の中で画面描画を行う。
+
+でよいのだろう。
+
+mame-sbc では、
+
+* I8251デバイスをメンバで作成する。
+  + `device_add_mconfig` 中で `I8251(config, m_usart, 1021800);`
+* ttyデバイスを自作する。  
+  + `rs232_device` を参考にする。
+  + `device_add_mconfig` 中で `m_usart->txd_handler().set("tty", FUNC(tty_device::write_txd));`
+  + `TTY(config, m_tty, 0);`
+  + `m_tty->rxd_handler().set(m_usart, FUNC(i8251_device::write_rxd));`
+* rs232_device の execute_run を探して中身を参考にする。
+  + 入力(rxd)検知
+  + 出力バッファあふれ?フロー制御?
+* i8251_device のコントロールレジスタ更新どうやる?
+  + i8251_device::write_rxd で書き込んだらコントロールレジスタも自動更新される?
+  + 別途コールバックがある? (i8251_device::write_txc?write_rxc?)
+
+## i8251_device::txd_handler は 0/1bit を書き込む
+
+`src/devices/bus/heathzenith/h89/h88_5.cpp`:
+
+このラムダ関数から、引数は bool state となっている。いやビットに割られても困る。
+
+```
+	m_uart->txd_handler().set([this] (bool state) { m_cassbit = state; });
+```
+
+## rs232_device
+
+`NABU PC RS232 Card` 特定マシンのRS232 Cardらしい。あまりgenericではなさそう。
+
+```
+void rs232_device::device_add_mconfig(machine_config &config)
+{
+	I8251(config, m_i8251, DERIVED_CLOCK(1, 2));
+	m_i8251->rxrdy_handler().set(FUNC(rs232_device::rxrdy_w));
+	m_i8251->txd_handler().set("rs232", FUNC(rs232_port_device::write_txd));
+
+	PIT8253(config, m_pit8253, DERIVED_CLOCK(1, 2));
+	m_pit8253->set_clk<0>(clock() / 2);
+	m_pit8253->out_handler<0>().set(m_i8251, FUNC(i8251_device::write_txc));
+	m_pit8253->set_clk<1>(clock() / 2);
+	m_pit8253->out_handler<1>().set(m_i8251, FUNC(i8251_device::write_rxc));
+
+	rs232_port_device &rs232(RS232_PORT(config, "rs232", default_rs232_devices, nullptr));
+	rs232.rxd_handler().set(m_i8251, FUNC(i8251_device::write_rxd));
+	rs232.cts_handler().set(m_i8251, FUNC(i8251_device::write_cts));
+	rs232.set_option_device_input_defaults("null_modem", DEVICE_INPUT_DEFAULTS_NAME(terminal));
+	rs232.set_option_device_input_defaults("terminal", DEVICE_INPUT_DEFAULTS_NAME(terminal));
+}
+```
+ 
+`i8251_device::rxrdy_handler` があるらしい。
+
+`rs232_port_device` を調べるべきだった。
+
+## rs232_port_device
+
+こちらが本物のシリアルポート下位層らしい。
+
+ボーレート、データビット長、パリティ、ストップビットの設定がある。
+
+```
+	// static configuration helpers
+	auto rxd_handler() { return m_rxd_handler.bind(); }
+	auto dcd_handler() { return m_dcd_handler.bind(); }
+	auto dsr_handler() { return m_dsr_handler.bind(); }
+	auto ri_handler() { return m_ri_handler.bind(); }
+	auto si_handler() { return m_si_handler.bind(); }
+	auto cts_handler() { return m_cts_handler.bind(); }
+	auto rxc_handler() { return m_rxc_handler.bind(); }
+	auto txc_handler() { return m_txc_handler.bind(); }
+```
+
+```
+	void write_txd(int state);        // DB25 pin  2  V.24 circuit 103   Transmitted data
+	void write_dtr(int state);        // DB25 pin 20  V.24 circuit 108/2 Data terminal ready
+	void write_rts(int state);        // DB25 pin  4  V.24 circuit 105   Request to send
+	void write_etc(int state);        // DB25 pin 24  V.24 circuit 113   Transmitter signal element timing (DTE)
+	void write_spds(int state);       // DB25 pin 23  V.24 circuit 111   Data signal rate selector (DTE)
+```
+
+やっぱり、ビット単位の読み書きだ。
+
+rs232_port_interface クラス:
+
+```
+	virtual void input_txd(int state) { }
+```
+
+上位層からの送信データ通知、このクラスを派生させて実デバイスへの書き込みを使う。
+
+```
+	void output_rxd(int state) { m_port->m_rxd = state; m_port->m_rxd_handler(state); }
+```
+
+下位層から受信データ受信、内部にビットを貯めてから rxd_handler(int state) を呼び出して上位層に伝える。
+
+ビット単位の読み書きは不要なので、使うなら i8251_device までだろう。
+
+### class i8251_device
+
+ハンドラ
+
+```
+	auto txd_handler() { return m_txd_handler.bind(); }
+	...
+	void write_rxd(int state);
+```
+
+* `txd_handler` 上位層からの送信データ書き込み時に下位層にデータ通知
+* `write_rxd` 下位層から i8251_device に受信データを通知。下位層デバイスにハンドラ登録する?でもビット単位だから今回は使えないか。
+
+上位層(対CPU)メンバ関数?
+
+```
+	uint8_t data_r();
+	void data_w(uint8_t data);
+	uint8_t status_r();
+	void control_w(uint8_t data);
+```
+
+これは仮想関数ではない。i8251_device::data_r 定義が呼び出される。これを1バイトずつマッピングしても動きそう。
+
+```
+	virtual uint8_t read(offs_t offset);
+	virtual void write(offs_t offset, uint8_t data);
+```
+
+これは仮想関数。これが Z80 の io_mem でマッピングされる関数かな。
+
+```
+// device type definition
+DECLARE_DEVICE_TYPE(I8251,   i8251_device)
+```
+
+最後にこれがあるので、`I8251()` 関数呼び出しでデバイスが生成・登録されるのかな。
+
+`src/device/machine/i8251.cpp`
+
+```
+void i8251_device::update_rx_ready()
+{
+	int state = m_status & I8251_STATUS_RX_READY;
+
+	// masked?
+	if (!BIT(m_command, 2))
+		state = 0;
+
+	m_rxrdy_handler(state != 0);
+}
+```
+
+`update_rx_ready`: m_status を m_rxrdy_handler で通知する。
+
+`receive_character` という関数がある。受信データ全ビット受信後に呼び出される。
+
+```
+/*-------------------------------------------------
+    receive_character - called when last
+    bit of data has been received
+-------------------------------------------------*/
+
+void i8251_device::receive_character(uint8_t ch)
+{
+	LOG("receive_character %02x\n", ch);
+
+	m_rx_data = ch;
+
+	LOGSTAT("status RX READY test %02x\n", m_status);
+	/* char has not been read and another has arrived! */
+	if (m_status & I8251_STATUS_RX_READY)
+	{
+		m_status |= I8251_STATUS_OVERRUN_ERROR;
+		LOGSTAT("status overrun set\n");
+	}
+
+	LOGSTAT("status pre RX READY set %02x\n", m_status);
+	m_status |= I8251_STATUS_RX_READY;
+	LOGSTAT("status post RX READY set %02x\n", m_status);
+
+	update_rx_ready();
+}
+```
+
+`data_r` : io_mem でマップするハンドラっぽい。
+
+`side_effects_disabled()` って何だろうか?
+
+```
+uint8_t i8251_device::data_r()
+{
+	LOG("read data: %02x, STATUS=%02x\n",m_rx_data,m_status);
+	/* reading clears */
+	if (!machine().side_effects_disabled())
+	{
+		m_status &= ~I8251_STATUS_RX_READY;
+		LOGSTAT("status RX_READY cleared\n");
+		update_rx_ready();
+	}
+	return m_rx_data;
+}
+```
+
+`read(ofs_t offset)` : 複数バイトをマッピングするための関数だ。
+
+```
+uint8_t i8251_device::read(offs_t offset)
+{
+	if (offset)
+		return status_r();
+	else
+		return data_r();
+}
+```
+
+`control_w`, 事実上 command_w 呼び出し。
+
+```
+void i8251_device::control_w(uint8_t data)
+{
+	if (m_flags == I8251_NEXT_SYNC1)
+		sync1_w(data);
+	else
+	if (m_flags == I8251_NEXT_SYNC2)
+		sync2_w(data);
+	else
+	if (m_flags == I8251_NEXT_MODE)
+		mode_w(data);
+	else
+		command_w(data);
+}
+
+```
+
+`command_w` でかい。
+
+```
+void i8251_device::command_w(uint8_t data)
+{
+	/* command */
+	m_command = data;
+
+	LOG("I8251: Command byte: %02x\n", data);
+	LOGCOM(" Tx enable: %d\n", data & 0x01 ? 1 : 0); // bit 0: 0 = transmit disable 1 = transmit enable
+	LOGCOM(" DTR      : %d\n", data & 0x02 ? 1 : 0); // bit 1: 0 = /DTR set to 1    1 = /DTR set to 0
+	LOGCOM(" Rx enable: %d\n", data & 0x04 ? 1 : 0); // bit 2: 0 = receive disable  1 = receive enable
+	LOGCOM(" Send BRK : %d\n", data & 0x08 ? 1 : 0); // bit 3: 0 = normal operation 1 = send break character
+	LOGCOM(" Err reset: %d\n", data & 0x10 ? 1 : 0); // bit 4: 0 = normal operation 1 = reset error flag
+	LOGCOM(" RTS      : %d\n", data & 0x20 ? 1 : 0); // bit 5: 0 = /RTS set to 1    1 = /RTS set to 0
+	LOGCOM(" Reset    : %d\n", data & 0x40 ? 1 : 0); // bit 6: 0 = normal operation 1 = internal reset
+	LOGCOM(" Hunt mode: %d\n", data & 0x80 ? 1 : 0); // bit 7: 0 = normal operation 1 = hunt mode
+
+	m_rts_handler(!BIT(data, 5));
+	m_dtr_handler(!BIT(data, 1));
+
+	if (BIT(data, 4))
+	{
+		LOGSTAT("status errors are reset\n");
+		m_status &= ~(I8251_STATUS_PARITY_ERROR | I8251_STATUS_OVERRUN_ERROR | I8251_STATUS_FRAMING_ERROR);
+	}
+
+	if (BIT(data, 6))
+	{
+		// datasheet says "returns to mode format", not
+		// completely resets the chip.  behavior of DEC Rainbow
+		// backs this up.
+		m_flags = I8251_NEXT_MODE;
+	}
+
+	// Hunt mode
+	m_hunt_on = false;
+	update_syndet(false);
+	if (m_sync_byte_count)
+		m_hunt_on = BIT(data, 7);
+	if (m_hunt_on)
+		m_ext_syn_set = false;
+
+	if (BIT(data, 3))
+		m_txd_handler(0);
+
+	check_for_tx_start();
+	update_rx_ready();
+	update_tx_ready();
+	update_tx_empty();
+}
+```
+
+* m_command に書き込まれたデータを保持
+* hunt mode は同期モードで使うらしい。
+* BIT3 on のとき、"Send BRK", m_txd_handler(0)を呼び出す。確かにTXDをゼロにするのだから。
+* あとは、check_for_tx_start(), update_rx_ready, update_tx_ready, update_tx_empty を呼び出す。
+
+### i8251_device まとめ
+
+i8251_device 自体は、定期的に呼び出されるメンバ関数はなさそう。
+
+`receive_character(uint8_t ch)`が、下位層からのデータ到着通知に使用できる。下位層へのデータ書き込みは、`data_w(uint8_t data)` を map しておけば、データレジスタアクセス時に必要な処理を全部やってくれる。
+
+よって、tty データ到着をチェックして、到着していれば1バイト読んで `receive_character(uint8_t ch)` で通知する関数を作り、別途定期的に呼び出す仕組みの導入が必要だ。
+
+`receive_character` は `receive_clock` の中で呼び出されている。なので、`receive_clock` を定期的に呼び出す仕組みを探す。
+
+`write_clock` は `write_rxc` の中で呼び出されいる。`write_rxc` を調べる。
+
+### 定期的呼び出し方法を探す。
+
+`src/devices/machine/ym2148.cpp` には `TIMER_CALLBACK_MEMBER` がある。これを使うか。
+
+```
+TIMER_CALLBACK_MEMBER(ym2148_device::serial_clock_tick)
+{
+	receive_clock();
+	transmit_clock();
+}
+```
+
+`TIMER_CALLBACK_MEMBER` はマクロで、s32型の引数1個を取る関数を宣言する。
+
+```
+#define TIMER_CALLBACK_MEMBER(name)     void name(s32 param)
+```
+
+s32 は `src/emu/attotime.h:typedef s32 seconds_t;` seconds_t 型だそうな。
+
+これでは上位存在が定期的に呼び出す仕組みに焼き付けられている様子はない。
+
+### class device_serial_interface
+
+こいつが scheduler に登録入れていた。
+
+```
+void device_serial_interface::interface_pre_start()
+{
+	if (!m_rcv_clock)
+		m_rcv_clock = device().machine().scheduler().timer_alloc(timer_expired_delegate(FUNC(device_serial_interface::rcv_clock), this));
+	if (!m_tra_clock)
+		m_tra_clock = device().machine().scheduler().timer_alloc(timer_expired_delegate(FUNC(device_serial_interface::tra_clock), this));
+	m_rcv_clock_state = false;
+	m_tra_clock_state = false;
+}
+```
+
+`m_rcv_clock` は `emu_timer *m_rcv_clock;` emu_timer型のポインタである。タイマに `device_serial_interface::rcv_clock` メンバ関数を登録している。
+
+`rcv_clock`関数は、
+
+```
+	TIMER_CALLBACK_MEMBER(rcv_clock) { rx_clock_w(!m_rcv_clock_state); }
+```
+
+で定義されている。`rx_clock_w` を呼び出している。
+
+`rx_clock_w` は virtual ではないメンバ関数
+
+```
+	void rx_clock_w(int state);
+```
+
+である。定義は、diserial.cpp にあり、
+
+```
+void device_serial_interface::rx_clock_w(int state)
+{
+	if(state != m_rcv_clock_state) {
+		m_rcv_clock_state = state;
+		if(!m_rcv_clock_state)
+			rcv_edge();
+	}
+}
+```
+
+クロックの下りエッジで、`rcv_edge()`を呼び出している。
+
+`rcv_edge()`は、diserial.cpp にあり、
+
+```
+void device_serial_interface::rcv_edge()
+{
+	rcv_callback();
+	if(is_receive_register_full())
+	{
+		m_rcv_clock->adjust(attotime::never);
+		rcv_complete();
+	}
+}
+```
+
+よし、`rcv_callback()` を見つけたぞ。シリアルクロック1周期ごとに1回呼び出される `rcv_callback()` に端末ドライバ状態polling を入れればよさそうだ。
+
+```
+	virtual void rcv_callback() { receive_register_update_bit(m_rcv_line); }
+
+```
+
+rcv_callback() は virtual なので、派生クラスで定義すればよい。 `receive_register_update_bit` をかぶせてもよいが。
+
+* `i8251_device` を有効化する。
+* `rcv_callback()` を派生クラスで定義して、そこで、
+  kbhit, osd_get_char(), i8251_device::receive_character(ch); を呼び出す。
+
+まずは、`I8251(...);` と、`rcv_callback()` 定義ですね。
 
