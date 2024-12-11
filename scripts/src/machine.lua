@@ -312,8 +312,8 @@ end
 
 if (MACHINES["I8251"]~=null) then
 	files {
---		MAME_DIR .. "src/devices/machine/i8251.cpp",
---		MAME_DIR .. "src/devices/machine/i8251.h",
+		MAME_DIR .. "src/devices/machine/i8251.cpp",
+		MAME_DIR .. "src/devices/machine/i8251.h",
 	}
 end
 

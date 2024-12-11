@@ -3747,3 +3747,56 @@ rcv_callback() は virtual なので、派生クラスで定義すればよい�
 
 まずは、`I8251(...);` と、`rcv_callback()` 定義ですね。
 
+## TxC, RxC 配線
+
+`msx_rs232c.cpp` :
+
+```
+void msx_slot_rs232_base_device::device_add_mconfig(machine_config &config)
+{
+	// Config based on svi738 schematics, are they the same for other machines?
+
+	I8251(config, m_i8251, 1.8432_MHz_XTAL);
+	m_i8251->txd_handler().set(m_rs232, FUNC(rs232_port_device::write_txd));
+	m_i8251->dtr_handler().set(m_rs232, FUNC(rs232_port_device::write_dtr));
+	m_i8251->rts_handler().set(m_rs232, FUNC(rs232_port_device::write_rts));
+	m_i8251->rxrdy_handler().set(*this, FUNC(msx_slot_rs232_base_device::rxrdy_w));
+	m_i8251->txrdy_handler().set(*this, FUNC(msx_slot_rs232_base_device::txrdy_w));
+
+	PIT8253(config, m_i8253);
+	m_i8253->set_clk<0>(1.8432_MHz_XTAL);
+	m_i8253->set_clk<1>(1.8432_MHz_XTAL);
+	m_i8253->set_clk<2>(1.8432_MHz_XTAL);
+	m_i8253->out_handler<0>().set(m_i8251, FUNC(i8251_device::write_rxc));
+	m_i8253->out_handler<1>().set(m_i8251, FUNC(i8251_device::write_txc));
+	m_i8253->out_handler<2>().set(*this, FUNC(msx_slot_rs232_base_device::out2_w));
+
+	RS232_PORT(config, m_rs232, default_rs232_devices, nullptr);
+	m_rs232->rxd_handler().set(m_i8251, FUNC(i8251_device::write_rxd));
+	m_rs232->dcd_handler().set(*this, FUNC(msx_slot_rs232_base_device::dcd_w));
+	m_rs232->ri_handler().set(*this, FUNC(msx_slot_rs232_base_device::ri_w));
+	m_rs232->cts_handler().set(*this, FUNC(msx_slot_rs232_base_device::cts_w));
+	m_rs232->dsr_handler().set(m_i8251, FUNC(i8251_device::write_dsr));
+}
+```
+
+i8251 のクロック入力 (write_rxc, write_txc) に i8253 のclock out0, 1 につないでいるという設定。
+
+とすると、やっぱり oscillator.cpp が欲しい。i8253 を簡単にしたもの。
+
+```
+void a2bus_byte8251_device::device_add_mconfig(machine_config &config)
+{
+	I8251(config, m_usart, 1021800); // CLK tied to ϕ1 signal from bus pin 38
+	m_usart->txd_handler().set("rs232", FUNC(rs232_port_device::write_txd));
+
+	MM5307AA(config, m_brg, DERIVED_CLOCK(1, 8));
+	m_brg->output_cb().set(m_usart, FUNC(i8251_device::write_txc));
+	m_brg->output_cb().append(m_usart, FUNC(i8251_device::write_rxc));
+
+	rs232_port_device &rs232(RS232_PORT(config, "rs232", default_rs232_devices, nullptr));
+	rs232.rxd_handler().set(m_usart, FUNC(i8251_device::write_rxd));
+}
+```
+
+MM5307AA の実装を参考にすればよいのかな。見てみよう。
