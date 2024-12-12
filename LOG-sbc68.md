@@ -45,7 +45,7 @@ makefile の `TARGET=sbc6800` 行が有効になっています。
 * `src/sbc6800` 以下にマシンを記述
     * 起動時に RESET ピン操作が必要
 * `src/devices/cpu/m6800` 以下を本家 mame から復元
-    * 本家 mame のコミット [4358422](https://github.com/mamedev/mame/tree/4358422) を使用すること (mame-sbc がフォークしたコミットに十分近いと推測される)
+    * 本家 mame のコミット [4358422](https://github.com/mamedev/mame/tree/4358422) を使用すること (mame-sbc 系統がフォークしたコミットに十分近いと推測される)
 * `scripts` 以下の lua ビルドスクリプトを編集
 * その他
 
