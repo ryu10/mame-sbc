@@ -8,6 +8,60 @@
 #include "tty.h"
 
 //
+// tty_device : mame device_t interface / status
+//
+tty_device::tty_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+	: device_t(mconfig, type, tag, owner, clock),
+	m_rxrdy_handler(*this),
+	m_txrdy_handler(*this),
+	m_txempty_handler(*this)
+{
+	fprintf(stderr, "tty_device: constructor\n");
+}
+
+tty_device::tty_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+	: i8251_device(mconfig, TTY, tag, owner, clock)
+{
+}
+
+
+uint8_t tty_device::data_r(void) { return tty::read_data_register(); }
+void tty_device::data_w(uint8_t data) { tty::write_data_register(data); }
+uint8_t tty_device::status_r(void) { return tty::read_status_register(); }
+
+uint8_t tty_device::read(offs_t offset)
+{
+	if (offset & 1) {
+		// status register
+		return status_r();
+	} else {
+		return data_r();
+	}
+}
+
+void tty_device::write(offs_t offset, uint8_t data)
+{
+	if (offset & 1) {
+		fprintf(stderr, "control_r: %02x\n", data);
+	} else {
+		data_w(data);
+	}
+}
+
+void tty_device::write_tty(uint8_t ch)
+{
+	tty::put_write_data(ch);
+}
+
+int tty_device::txrdy_r()
+{
+	return (read_status_register() & TXRDY_Bit);
+}
+
+
+// class tty member functions
+
+//
 // get_100usec ... with clock_gettime, a new POSIC standard
 //
 tick_t tty::get_tick(void)

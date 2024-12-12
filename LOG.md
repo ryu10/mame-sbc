@@ -3800,3 +3800,76 @@ void a2bus_byte8251_device::device_add_mconfig(machine_config &config)
 ```
 
 MM5307AA の実装を参考にすればよいのかな。見てみよう。
+
+## MM5307AA の実装
+
+MM5307AA はどうやらボーレートジェネレータらしい^^X 。
+
+<img width=400 src="img/mm5307-coverpage.png">
+
+^^X{
+bitsavers.org にカタログがある。http://www.bitsavers.org/components/national/_dataBooks/1977_National_MOS_LSI_databook.pdf 
+^^}
+
+```
+void mm5307_device::device_start()
+{
+	// Create timer
+	m_periodic_timer = timer_alloc(FUNC(mm5307_device::periodic_update), this);
+
+	// Register for saving
+	save_item(NAME(m_freq_control));
+	save_item(NAME(m_phase));
+}
+```
+
+`timer_alloc(FUNC(mm5307_device::periodic_update), this);` でタイマを返すらしい。
+
+クラス内での宣言は、
+
+```
+	// timed update callback
+	TIMER_CALLBACK_MEMBER(periodic_update);
+```
+
+メンバ関数の定義は、
+
+```
+TIMER_CALLBACK_MEMBER(mm5307_device::periodic_update)
+{
+	// Up to four different phases
+	m_phase = (m_phase + 1) & 3;
+	m_output_cb(BIT(m_phase, 0));
+
+	u16 divisor = m_divisors_x2[m_freq_control];
+	if (divisor == 0)
+	{
+		m_periodic_timer->adjust(m_ext_freq == 0 ? attotime::never : attotime::from_hz(m_ext_freq) / 2);
+	}
+	else switch (m_phase)
+	{
+	// First low output phase
+	case 0:
+		m_periodic_timer->adjust(clocks_to_attotime((divisor & ~2) >> 1 | (divisor & 1)) / 2);
+		break;
+
+	// First high output phase
+	case 1:
+		m_periodic_timer->adjust(clocks_to_attotime((divisor + 2) >> 2));
+		break;
+
+	// Second low output phase
+	case 2:
+		m_periodic_timer->adjust(clocks_to_attotime((divisor >> 2) + (divisor & 1)));
+		break;
+
+	// Second high output phase
+	case 3:
+		m_periodic_timer->adjust(clocks_to_attotime(((divisor + (divisor & 2)) >> 1) - ((divisor & 1) << 1)) / 2);
+		break;
+	}
+}
+```
+
+`m_periodic_timer->adjust(attotime_t time);` で周期を設定するらしい。タイマなので、毎回同じ周期を設定すると、その時間のあとで `periodic_update` を呼び出してくれるのだろう。周期呼び出しの処理は、`m_output_cb(int state)` で取り出すことができるようだ。このデバイスのインスタンスにコールバック関数を差し込めばよいのだろう。
+

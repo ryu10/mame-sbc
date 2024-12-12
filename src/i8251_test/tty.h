@@ -1,18 +1,89 @@
-#ifndef HEADER__TTY
-#define HEADER__TTY
+#ifndef HEADER_TTY
+#define HEADER_TTY
 
 #include "emu.h"
 #include <time.h>
 #include <unistd.h>
+
+class tty_device : public device_t, public tty
+{
+public:
+	// construction/destruction
+	tty_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
+
+	// configuration helpers
+	auto rxrdy_handler() { return m_rxrdy_handler.bind(); }
+	auto txrdy_handler() { return m_txrdy_handler.bind(); }
+	auto txempty_handler() { return m_txempty_handler.bind(); }
+
+	uint8_t data_r();
+	void data_w(uint8_t data);
+	uint8_t status_r();
+
+	virtual uint8_t read(offs_t offset);
+	virtual void write(offs_t offset, uint8_t data);
+
+	void write_tty(uint8_t ch);
+
+	int txrdy_r();
+
+protected:
+	enum
+	{
+		TTY_STATUS_FRAMING_ERROR = 0x20,
+		TTY_STATUS_OVERRUN_ERROR = 0x10,
+		TTY_STATUS_PARITY_ERROR = 0x08,
+		TTY_STATUS_TX_EMPTY = 0x04,
+		TTY_STATUS_RX_READY = 0x02,
+		TTY_STATUS_TX_READY = 0x01
+	};
+
+	tty_device(
+			const machine_config &mconfig,
+			device_type type,
+			const char *tag,
+			device_t *owner,
+			uint32_t clock);
+
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
+
+	void command_w(uint8_t data);
+	void mode_w(uint8_t data);
+
+	void receive_character(uint8_t ch);
+
+	void update_rx_ready();
+	void update_tx_ready();
+	void update_tx_empty();
+	void transmit_clock();
+	void receive_clock();
+	bool is_tx_enabled() const;
+	void check_for_tx_start();
+	void start_tx();
+
+private:
+	devcb_write_line m_rxrdy_handler;
+	devcb_write_line m_txrdy_handler;
+	devcb_write_line m_txempty_handler;
+
+	/* flags controlling how tty_control_w operates */
+	uint8_t m_flags;
+	/* status of i8251 */
+	uint8_t m_status;
+	uint8_t m_command;
+};
+
 
 /**************************************************************
   8251 emulation
  **************************************************************/
 
 // Data regisger/Control register
-#define I8251_DR 0
-#define I8251_CR 1
-#define I8251_SR 1
+#define TTY_DR 0
+#define TTY_CR 1
+#define TTY_SR 1
 
 // Status Register
 #define DSR_Bit (1<<7)
@@ -96,6 +167,7 @@ private:
     tick_t get_tick(void);
 };
 
+// device type definition
+DECLARE_DEVICE_TYPE(TTY, tty_device)
 
-#endif /* HEADER__TTY */
-
+#endif /* HEADER_TTY */
