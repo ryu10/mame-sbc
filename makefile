@@ -18,8 +18,8 @@
 # IGNORE_GIT = 1
 
 # TARGET = mame
-TARGET = sbc8080
-# TARGET = emuz80
+# TARGET = sbc8080
+TARGET = emuz80
 # TARGET = sbc6800
 # TARGET = sbc6809
 # SUBTARGET = tiny
