@@ -15,6 +15,7 @@
 #include "i8251_test.h"
 #include "interface.h"
 //#include "tty.h"
+#include "blink.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -29,7 +30,8 @@ public:
 		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_main_ram(*this, "main_ram"),
-		m_uart(*this, "uart")
+		m_uart(*this, "uart"),
+		m_blink(*this, "blink")
 	{
 		//m_tty = new tty();
 		g_i8251_test = this;
@@ -51,6 +53,7 @@ public:
 
 	void int_line(int state);
 	//void update_tty_state(uint8_t state) { m_tty->device_update(state); };
+	void do_blink(int state);
 
 private:
 	required_device<z80_device> m_maincpu;
@@ -58,6 +61,7 @@ private:
 	required_device<i8251_device> m_uart;
 	//std::string terminate_string;
 	//tty *m_tty;
+	required_device<blink_device> m_blink;
 	//int m_tty_state;
 	// int line state
 	int m_prev_int_line = -1;
@@ -94,8 +98,6 @@ void i8251_test_state::machine_reset()
 	memcpy(m_main_ram, i8251_test_binary, sizeof i8251_test_binary);
 	// serial reset
 	//m_tty->set_irq_cb(irq_callback);
-	//m_tty->device_reset();
-	m_uart->device_reset();
 	fprintf(stderr, "machine_reset\n");
 }
 
@@ -127,8 +129,14 @@ void i8251_test_state::uart_dreg_w(uint8_t data)
 	m_uart->data_w(data);
 }
 
-// watcher ... キー入力監視ワークエリアのアドレスを探し出して叩く。
+void i8251_test_state::do_blink(int state)
+{
+	printf("%d", state);
+}
+
+
 #if 0
+// watcher ... キー入力監視ワークエリアのアドレスを探し出して叩く。
 uint8_t i8251_test_state::watcher_memory_r(offs_t offset)
 {
 	uint8_t b = m_watcher[offset];
@@ -197,6 +205,8 @@ void i8251_test_state::i8251_test(machine_config &config)
 	//Z80(config, m_maincpu, XTAL(3'579'545));
 	Z80(config, m_maincpu, XTAL(20'000'000));
 	I8251(config, m_uart, 100);
+	BLINK(config, m_blink, (u32)100);
+	m_blink->output_cb().set(FUNC(i8251_test_state::do_blink));
 	m_maincpu->set_addrmap(AS_PROGRAM, &i8251_test_state::z80_mem);
 	m_maincpu->set_addrmap(AS_IO, &i8251_test_state::io_map);
 	// register a hook to z80 instruction execution loop

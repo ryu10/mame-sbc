@@ -10,7 +10,9 @@
 //
 // tty_device : mame device_t interface / status
 //
-tty_device::tty_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+DEFINE_DEVICE_TYPE(TTY, tty_device, "tty", "tty uart")
+
+tty_device::tty_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, type, tag, owner, clock),
 	m_rxrdy_handler(*this),
 	m_txrdy_handler(*this),
@@ -20,10 +22,20 @@ tty_device::tty_device(const machine_config &mconfig, const char *tag, device_t 
 }
 
 tty_device::tty_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: i8251_device(mconfig, TTY, tag, owner, clock)
+	: tty_device(mconfig, TTY, tag, owner, clock)
 {
 }
 
+void tty_device::device_start(void)
+{
+	fprintf(stderr, "tty_device::device_start\n");
+}
+
+void tty_device::device_reset(void)
+{
+	fprintf(stderr, "tty_device::device_reset\n");
+	tty::device_reset();
+}
 
 uint8_t tty_device::data_r(void) { return tty::read_data_register(); }
 void tty_device::data_w(uint8_t data) { tty::write_data_register(data); }

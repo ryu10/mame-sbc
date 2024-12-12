@@ -3747,6 +3747,18 @@ rcv_callback() は virtual なので、派生クラスで定義すればよい�
 
 まずは、`I8251(...);` と、`rcv_callback()` 定義ですね。
 
+## tty_device クラスへの道{id=a8-4}
+
+やっぱりビット単位のシリアルデバイスはちょっと勘弁な、そんな気がする。
+
+`i8251_device` をそのまま使うと TxD, RxD に接続するシリアルデバイスクラスを別途用意して「接続」せねばならない。我々はすでに、単純な tty クラスを持っており、「定期的に呼び出す関数(コールバック)」を追加すればまともに動作しそうな感触を持っている。
+
+ならば、シリアルデバイスクラスの実装を参考にして「定期的に呼び出す関数」を作ろう。クロックジェネレータのエミュレーションでもいいかもしれない。
+
+つまり、**Lチカをエミュレーション** するのだ。最初は周期1秒から始めるが、これを 0.1ms == 100us ぐらいの周期で呼び出し、10分周すれば9600bps 相当の速度が実現できることになる。
+
+上位存在からは、'`TTY`'で初期化し、 `data_w`, `data_w`, `status_w`, `control_w` メンバ関数をアドレスに張り付けるぐらいの処理で使える `device_t` 派生クラスを作ろう。その名も `tty_device` だ。
+
 ## TxC, RxC 配線
 
 `msx_rs232c.cpp` :
@@ -3872,4 +3884,106 @@ TIMER_CALLBACK_MEMBER(mm5307_device::periodic_update)
 ```
 
 `m_periodic_timer->adjust(attotime_t time);` で周期を設定するらしい。タイマなので、毎回同じ周期を設定すると、その時間のあとで `periodic_update` を呼び出してくれるのだろう。周期呼び出しの処理は、`m_output_cb(int state)` で取り出すことができるようだ。このデバイスのインスタンスにコールバック関数を差し込めばよいのだろう。
+
+### Lチカクラスを作る{id=a8-4-1}
+
+Lチカといえば blink ですね。 blink_device クラスを作る。
+
+
+`blink.h` で blink_device クラスを宣言する。
+
+* m_periodic_timer: emu_timer クラスのメンバ、`m_periodic_timer->adjust(attotime period)` で、period 経過後に、登録したコールバック(本クラスでは `blink_device::periodic_update()`)関数を呼び出す。
+* m_output_cb メンバ、クラス外から差し込むコールバック関数をメンバに持つ。型 `devcb_write_line` でいく。この場合のコールバック関数の型は `void (*callback_cb)(int state)`
+* period_pudate: `TIMER_CALLBACK_MEMBER(periodic_update)` でメンバ宣言する。
+* 本ファイルの最後で、`DECLARE_DEVICE_TYPE(BLINK, blink_device)` 。どうやら `BLINK` 型を宣言するらしい。
+
+```
+class blink_device : public device_t
+{
+public:
+    blink_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
+    auto output_cb() { return m_output_cb.bind(); }
+protected:
+	// base class constructor
+    blink_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
+	// device_t implementation
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
+private:
+	// timed update callback
+	TIMER_CALLBACK_MEMBER(periodic_update);
+	// callbacks
+	devcb_write_line m_output_cb;
+	// timer
+	emu_timer *m_periodic_timer;
+};
+
+DECLARE_DEVICE_TYPE(BLINK, blink_device)
+```
+
+関数定義部分 `blink.cpp` では以下の定義を持つ。
+
+* 周期は 0.5sec, 500ms, マクロ `BLINK_PERIOD` で当てる。
+* `blick_device::device_start(void)` : blink_device クラス実体の初期化、ここでは emu_timer にコールバック関数 `blink_device::periodic_update` を登録する。上位存在側で自動的に呼び出される。明示的に呼び出さない。
+* `blick_device::device_reset(void)` : blink_device のリセット、なんど呼び出してもよい。タイマの場合は adjust 関数でタイマをスタートする。
+* adjust() の引数は `attotime` クラス。実体は `m_seconds` と `m_attoseconds` の2要素ペア。ここでは static 関数 `attotime::from_msec()` で 500ms を `attotime` 型に変換している。
+* タイマコールバック関数 `blink_device::periodic_update(s32 period)` : 前回 adjust で指定した時間が経過すると呼び出される。ここでは、コールバック `m_output_cb(int state)` を呼び出す。そのあと adjust で同じ時間 500ms を設定し、次の呼び出しを待つ。
+
+```
+#define BLINK_PERIOD 500
+
+void blink_device::device_start()
+{
+	// Create timer
+	m_periodic_timer = timer_alloc(FUNC(blink_device::periodic_update), this);
+}
+
+void blink_device::device_reset()
+{
+	// Output delay from reset
+	fprintf(stderr, "blink_device::device_reset\n");
+	m_periodic_timer->adjust(attotime::from_msec(BLINK_PERIOD));
+}
+
+TIMER_CALLBACK_MEMBER(blink_device::periodic_update)
+{
+	// Up to four different phases
+	m_phase = (m_phase + 1) & 3;
+	m_output_cb(BIT(m_phase, 0));
+	m_periodic_timer->adjust(attotime::from_msec(BLINK_PERIOD));
+}
+```
+
+あとは、`i8251_test` の初期化部分でデバイスを1つ作成する。
+
+```
+	BLINK(config, m_blink, (u32)100);
+	m_blink->output_cb().set(FUNC(i8251_test_state::do_blink));
+```
+
+`m_blink->output_cb().set(FUNC(...));` でコールバック関数を差し込む。
+
+これで、`i8251_test_state::do_blink(int state)` 関数が呼び出される。
+
+```
+void i8251_test_state::do_blink(int state)
+{
+	printf("%d", state);
+}
+```
+
+この関数が0.5sec に1回呼び出される。実行結果は以下のようになる。
+
+```
+kuma@LAURELEY:~/mame-sbc$ !.
+./i8251_test
+i8251_test_state: constructor
+warning_txt = -1
+blink_device::device_reset
+machine_reset
+10101010101010101010101010101^\Quit (core dumped)
+kuma@LAURELEY:~/mame-sbc$
+```
+
+1,0,1,0, ... が繰り返されていることがわかる。
 
