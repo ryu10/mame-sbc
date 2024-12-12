@@ -22,11 +22,11 @@
 //  bookkeeping_manager - constructor
 //-------------------------------------------------
 
-bookkeeping_manager::bookkeeping_manager(running_machine &machine) :
-	m_machine(machine),
-	m_dispensed_tickets(0)
+bookkeeping_manager::bookkeeping_manager(running_machine &machine)
+	: m_machine(machine),
+		m_dispensed_tickets(0)
 {
-	// reset coin counters
+	/* reset coin counters */
 	for (int counternum = 0; counternum < COIN_COUNTERS; counternum++)
 	{
 		m_lastcoin[counternum] = 0;
@@ -53,16 +53,6 @@ bookkeeping_manager::bookkeeping_manager(running_machine &machine) :
 ***************************************************************************/
 
 /*-------------------------------------------------
-    increment_dispensed_tickets - increment the
-    number of dispensed tickets
--------------------------------------------------*/
-
-void bookkeeping_manager::increment_dispensed_tickets(int delta)
-{
-	m_dispensed_tickets += delta;
-}
-
-/*-------------------------------------------------
     get_dispensed_tickets - return the number of
     tickets dispensed
 -------------------------------------------------*/
@@ -74,13 +64,13 @@ int bookkeeping_manager::get_dispensed_tickets() const
 
 
 /*-------------------------------------------------
-    reset_dispensed_tickets - reset the number of
-    tickets dispensed
+    increment_dispensed_tickets - increment the
+    number of dispensed tickets
 -------------------------------------------------*/
 
-void bookkeeping_manager::reset_dispensed_tickets()
+void bookkeeping_manager::increment_dispensed_tickets(int delta)
 {
-	m_dispensed_tickets = 0;
+	m_dispensed_tickets += delta;
 }
 
 
@@ -166,8 +156,8 @@ void bookkeeping_manager::coin_counter_w(int num, int on)
 	if (num >= std::size(m_coin_count))
 		return;
 
-	// count it only if the data has changed from 0 to non-zero
-	if (machine().time() > attotime::zero && on && (m_lastcoin[num] == 0))
+	/* Count it only if the data has changed from 0 to non-zero */
+	if (on && (m_lastcoin[num] == 0))
 		m_coin_count[num]++;
 	m_lastcoin[num] = on;
 }
@@ -187,23 +177,10 @@ int bookkeeping_manager::coin_counter_get_count(int num)
 
 
 /*-------------------------------------------------
-    coin_counter_reset_count - reset the coin count
-    for a given coin
--------------------------------------------------*/
-
-void bookkeeping_manager::coin_counter_reset_count(int num)
-{
-	if (num >= std::size(m_coin_count))
-		return;
-	m_coin_count[num] = 0;
-}
-
-
-/*-------------------------------------------------
     coin_lockout_w - locks out one coin input
 -------------------------------------------------*/
 
-void bookkeeping_manager::coin_lockout_w(int num, int on)
+void bookkeeping_manager::coin_lockout_w(int num,int on)
 {
 	if (num >= std::size(m_coinlockedout))
 		return;
