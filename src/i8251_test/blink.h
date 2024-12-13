@@ -31,6 +31,8 @@ private:
 	devcb_write_line m_output_cb;
 	// timer
 	emu_timer *m_periodic_timer;
+	// internal state
+	int m_phase;
 };
 
 DECLARE_DEVICE_TYPE(BLINK, blink_device)

@@ -13,6 +13,7 @@ blink_device::blink_device(const machine_config &mconfig, device_type type, cons
 	: device_t(mconfig, type, tag, owner, clock)
 	, m_output_cb(*this)
 	, m_periodic_timer(nullptr)
+	, m_phase(0)
 {
 }
 
@@ -27,6 +28,7 @@ blink_device::blink_device(const machine_config &mconfig, const char *tag, devic
 void blink_device::device_start()
 {
 	// Create timer
+	fprintf(stderr, "blink_device::device_start\n");
 	m_periodic_timer = timer_alloc(FUNC(blink_device::periodic_update), this);
 }
 
