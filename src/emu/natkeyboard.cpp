@@ -678,11 +678,11 @@ void natural_keyboard::build_codes()
 				{
 					if (!(curshift & ~mask))
 					{
-						// fetch the code, ignoring shifters
+						// fetch the code, ignoring 0 and shifters
 						std::vector<char32_t> const codes = field.keyboard_codes(curshift);
 						for (char32_t code : codes)
 						{
-							if ((code < UCHAR_SHIFT_BEGIN) || (code > UCHAR_SHIFT_END))
+							if (((code < UCHAR_SHIFT_BEGIN) || (code > UCHAR_SHIFT_END)) && (code != 0))
 							{
 								m_have_charkeys = true;
 								keycode_map::iterator const found(devinfo.codemap.find(code));
