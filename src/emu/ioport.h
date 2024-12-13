@@ -25,7 +25,6 @@
 #include <cstdint>
 #include <cstring>
 #include <ctime>
-#include <functional>
 #include <iosfwd>
 #include <initializer_list>
 #include <list>
@@ -46,13 +45,12 @@ constexpr ioport_value IP_ACTIVE_LOW = 0xffffffff;
 constexpr int MAX_PLAYERS = 10;
 
 // unicode constants
-constexpr char32_t UCHAR_INVALID = 0xffff;
 constexpr char32_t UCHAR_PRIVATE = 0x100000;
 constexpr char32_t UCHAR_SHIFT_1 = UCHAR_PRIVATE + 0;
 constexpr char32_t UCHAR_SHIFT_2 = UCHAR_PRIVATE + 1;
 constexpr char32_t UCHAR_SHIFT_BEGIN = UCHAR_SHIFT_1;
 constexpr char32_t UCHAR_SHIFT_END = UCHAR_SHIFT_2;
-constexpr char32_t UCHAR_MAMEKEY_BEGIN = UCHAR_SHIFT_END + 1;
+constexpr char32_t UCHAR_MAMEKEY_BEGIN = UCHAR_PRIVATE + 2;
 
 
 // crosshair types
@@ -474,7 +472,7 @@ public:
 	bool none() const { return (m_condition == ALWAYS); }
 
 	// configuration
-	void reset() { set(ALWAYS, "", 0, 0); }
+	void reset() { set(ALWAYS, nullptr, 0, 0); }
 	void set(condition_t condition, const char *tag, ioport_value mask, ioport_value value)
 	{
 		m_condition = condition;
@@ -489,7 +487,7 @@ public:
 private:
 	// internal state
 	condition_t     m_condition;    // condition to use
-	const char *    m_tag;          // tag of port whose condition is to be tested (must never be nullptr)
+	const char *    m_tag;          // tag of port whose condition is to be tested
 	ioport_port *   m_port;         // reference to the port to be tested
 	ioport_value    m_mask;         // mask to apply to the port
 	ioport_value    m_value;        // value to compare against
@@ -1092,7 +1090,6 @@ private:
 	ioport_port *       m_curport;
 	ioport_field *      m_curfield;
 	ioport_setting *    m_cursetting;
-	int                 m_curshift;
 };
 
 
@@ -1227,10 +1224,11 @@ ATTR_COLD void INPUT_PORTS_NAME(_name)(device_t &owner, ioport_list &portlist, s
 #define PORT_CROSSHAIR(axis, scale, offset, altaxis) \
 	configurer.field_set_crosshair(CROSSHAIR_AXIS_##axis, altaxis, scale, offset);
 
-#define PORT_CROSSHAIR_MAPPER_MEMBER_IMPL(_device, _funcptr, _name) \
-	configurer.field_set_crossmapper(ioport_field_crossmap_delegate(owner, _device, _funcptr, _name));
-#define PORT_CROSSHAIR_MAPPER_DEVICE_MEMBER(...) PORT_CROSSHAIR_MAPPER_MEMBER_IMPL(__VA_ARGS__)
-#define PORT_CROSSHAIR_MAPPER_MEMBER(...) PORT_CROSSHAIR_MAPPER_MEMBER_IMPL(DEVICE_SELF, __VA_ARGS__)
+#define PORT_CROSSHAIR_MAPPER(_callback) \
+	configurer.field_set_crossmapper(ioport_field_crossmap_delegate(owner, DEVICE_SELF, _callback, #_callback));
+
+#define PORT_CROSSHAIR_MAPPER_MEMBER(_device, _class, _member) \
+	configurer.field_set_crossmapper(ioport_field_crossmap_delegate(owner, _device, &_class::_member, #_class "::" #_member));
 
 // how many optical counts for 1 full turn of the control
 #define PORT_FULL_TURN_COUNT(_count) \
@@ -1256,41 +1254,48 @@ ATTR_COLD void INPUT_PORTS_NAME(_name)(device_t &owner, ioport_list &portlist, s
 	configurer.field_set_analog_invert();
 
 // read callbacks
-#define PORT_CUSTOM_MEMBER_IMPL(_device, _funcptr, _name) \
-	configurer.field_set_dynamic_read(ioport_field_read_delegate(owner, _device, _funcptr, _name));
-#define PORT_CUSTOM_DEVICE_MEMBER(...) PORT_CUSTOM_MEMBER_IMPL(__VA_ARGS__)
-#define PORT_CUSTOM_MEMBER(...) PORT_CUSTOM_MEMBER_IMPL(DEVICE_SELF, __VA_ARGS__);
+#define PORT_CUSTOM_MEMBER(_class, _member) \
+	configurer.field_set_dynamic_read(ioport_field_read_delegate(owner, DEVICE_SELF, &_class::_member, #_class "::" #_member));
+#define PORT_CUSTOM_DEVICE_MEMBER(_device, _class, _member) \
+	configurer.field_set_dynamic_read(ioport_field_read_delegate(owner, _device, &_class::_member, #_class "::" #_member));
 
 // write callbacks
-#define PORT_CHANGED_MEMBER_IMPL(_device, _funcptr, _name, _param) \
-	configurer.field_set_dynamic_write(ioport_field_write_delegate(owner, _device, _funcptr, _name), (_param));
-#define PORT_CHANGED_MEMBER(...) PORT_CHANGED_MEMBER_IMPL(__VA_ARGS__)
+#define PORT_CHANGED_MEMBER(_device, _class, _member, _param) \
+	configurer.field_set_dynamic_write(ioport_field_write_delegate(owner, _device, &_class::_member, #_class "::" #_member), (_param));
 
 // input device handler
-#define PORT_READ_LINE_MEMBER_IMPL(_device, _funcptr, _name) \
+#define PORT_READ_LINE_MEMBER(_class, _member) \
+	configurer.field_set_dynamic_read( \
+			ioport_field_read_delegate( \
+				owner, \
+				DEVICE_SELF, \
+				static_cast<ioport_value (*)(_class &)>([] (_class &device) -> ioport_value { return (device._member() & 1) ? ~ioport_value(0) : 0; }), \
+				#_class "::" #_member));
+#define PORT_READ_LINE_DEVICE_MEMBER(_device, _class, _member) \
 	configurer.field_set_dynamic_read( \
 			ioport_field_read_delegate( \
 				owner, \
 				_device, \
-				static_cast<ioport_value (*)(emu::detail::rw_delegate_device_class_t<decltype(_funcptr)> &)>( \
-					[] (auto &device) -> ioport_value { return (std::invoke(_funcptr, device) & 1) ? ~ioport_value(0) : 0; }), \
-				_name));
-#define PORT_READ_LINE_DEVICE_MEMBER(...) PORT_READ_LINE_MEMBER_IMPL(__VA_ARGS__)
-#define PORT_READ_LINE_MEMBER(...) PORT_READ_LINE_MEMBER_IMPL(DEVICE_SELF, __VA_ARGS__)
+				static_cast<ioport_value (*)(_class &)>([] (_class &device) -> ioport_value { return (device._member() & 1) ? ~ioport_value(0) : 0; }), \
+				#_class "::" #_member));
 
 // output device handler
-#define PORT_WRITE_LINE_MEMBER_IMPL(_device, _funcptr, _name) \
+#define PORT_WRITE_LINE_MEMBER(_class, _member) \
+	configurer.field_set_dynamic_write( \
+			ioport_field_write_delegate( \
+				owner, \
+				DEVICE_SELF, \
+				static_cast<void (*)(_class &, ioport_field &, u32, ioport_value, ioport_value)>([] (_class &device, ioport_field &field, u32 param, ioport_value oldval, ioport_value newval) { device._member(newval); }), \
+				#_class "::" #_member));
+#define PORT_WRITE_LINE_DEVICE_MEMBER(_device, _class, _member) \
 	configurer.field_set_dynamic_write( \
 			ioport_field_write_delegate( \
 				owner, \
 				_device, \
-				static_cast<void (*)(emu::detail::rw_delegate_device_class_t<decltype(_funcptr)> &, ioport_field &, u32, ioport_value, ioport_value)>( \
-					[] (auto &device, ioport_field &field, u32 param, ioport_value oldval, ioport_value newval) { std::invoke(_funcptr, device, newval); }), \
-				_name));
-#define PORT_WRITE_LINE_DEVICE_MEMBER(...) PORT_WRITE_LINE_MEMBER_IMPL(__VA_ARGS__)
-#define PORT_WRITE_LINE_MEMBER(...) PORT_WRITE_LINE_MEMBER_IMPL(DEVICE_SELF, __VA_ARGS__)
+				static_cast<void (*)(_class &, ioport_field &, u32, ioport_value, ioport_value)>([] (_class &device, ioport_field &field, u32 param, ioport_value oldval, ioport_value newval) { device._member(newval); }), \
+				#_class "::" #_member));
 
-// DIP switch definition
+// dip switch definition
 #define PORT_DIPNAME(_mask, _default, _name) \
 	configurer.field_alloc(IPT_DIPSWITCH, (_default), (_mask), (_name));
 #define PORT_DIPSETTING(_default, _name) \
@@ -1299,7 +1304,7 @@ ATTR_COLD void INPUT_PORTS_NAME(_name)(device_t &owner, ioport_list &portlist, s
 // note that these are specified LSB-first
 #define PORT_DIPLOCATION(_location) \
 	configurer.field_set_diplocation(_location);
-// conditionals for DIP switch settings
+// conditionals for dip switch settings
 #define PORT_CONDITION(_tag, _mask, _condition, _value) \
 	configurer.set_condition(ioport_condition::_condition, _tag, _mask, _value);
 // analog adjuster definition
@@ -1455,6 +1460,12 @@ ATTR_COLD void INPUT_PORTS_NAME(_name)(device_t &owner, ioport_list &portlist, s
 
 #define PORT_SERVICE_NO_TOGGLE(_mask, _default) \
 	PORT_BIT( _mask, _mask & _default, IPT_SERVICE ) PORT_NAME( DEF_STR( Service_Mode ))
+
+#define PORT_VBLANK(_screen) \
+	PORT_READ_LINE_DEVICE_MEMBER(_screen, screen_device, vblank)
+
+#define PORT_HBLANK(_screen) \
+	PORT_READ_LINE_DEVICE_MEMBER(_screen, screen_device, hblank)
 
 //**************************************************************************
 //  INLINE FUNCTIONS
