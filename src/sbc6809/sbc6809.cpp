@@ -65,7 +65,7 @@ void sbc6809_state::machine_reset()
 	fprintf(stderr, "memcpy: %ld bytes to main_rom\n", sizeof sbc6809_b1_binary);
 	#endif
 
-	fprintf(stderr, "reset vector: %x %x \n", m_main_rom[0xfffe - 0xe000], m_main_rom[0xffff - 0xe000]);
+	fprintf(stderr, "reset vector: %02X %02X \n", m_main_rom[0xfffe - 0xe000], m_main_rom[0xffff - 0xe000]);
 	// serial reset
 	input_device_reset();
 	output_device_reset();

@@ -60,7 +60,7 @@ void sbc6800_state::machine_reset()
 	// memcpy(m_main_ram+0xe000, sbc6800_binary, sizeof sbc6800_binary);
 	memcpy(m_main_rom, sbc6800_binary, sizeof sbc6800_binary);
 	fprintf(stderr, "memcpy: %ld bytes to main_rom\n", sizeof sbc6800_binary);
-	fprintf(stderr, "reset vector: %x %x \n", m_main_rom[0xfffe - 0xe000], m_main_rom[0xffff - 0xe000]);
+	fprintf(stderr, "reset vector: %02X %02X \n", m_main_rom[0xfffe - 0xe000], m_main_rom[0xffff - 0xe000]);
 	// serial reset
 	input_device_reset();
 	output_device_reset();
