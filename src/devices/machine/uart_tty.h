@@ -14,6 +14,9 @@
 #include <time.h>
 #include <unistd.h>
 
+// redirect / asciiart.bas file read enable
+#define REDIRECT
+
 // tick timer counter type (internal only)
 typedef int32_t tick_t;
 
@@ -32,6 +35,8 @@ typedef int32_t tick_t;
 #define RXRDY_Bit (1<<1)
 #define TXRDY_Bit (1<<0)
 
+// tick timer counter type (internal only)
+typedef int32_t tick_t;
 
 class uart_device : public device_t {
 public:
@@ -63,6 +68,9 @@ protected:
 
     // register tweaking
     virtual uint8_t update_status_r(void);
+
+	// time measurement
+	tick_t get_current_tick(void);
 
 private:
     // timer update callback
@@ -102,16 +110,21 @@ protected:
 	int m_data_r_overrun = 1;
 	int m_data_w_overrun = 0;
 private:
+	// measurement
+	tick_t m_tick_start = 0;
 
 	// lower layer (terminal device)
 	int kbhit(void);
 	int getch(void);
+	void putch(uint8_t ch);
+#ifdef REDIRECT
 	// input redirect
-	//FILE *m_fp = NULL;
-	//int m_file_flag = 1;
+	FILE *m_fp = NULL;
+	int m_file_flag = 1;
+	const char *m_filename = "ASCIIART.BAS";
+#endif
     int m_fd = STDIN_FILENO;
 	void changemode(int dir);
-	//const char *m_filename = "ASCIIART.BAS";
 
     // file input redirection
     void reset_asciiart_input(void);

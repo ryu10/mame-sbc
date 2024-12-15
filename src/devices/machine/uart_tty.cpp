@@ -98,7 +98,7 @@ void uart_device::data_w(uint8_t data)
 	m_data_w = data;
 	m_data_w_ready = 0;
 	if (m_data_w_empty) {
-		putchar(m_data_w);
+		putch(m_data_w);
 		start_timer_txd(0);
 		m_data_w_empty = 0;
 	} else {
@@ -128,6 +128,7 @@ void uart_device::set_baudrate(time_t baudrate) { m_clock = baudrate; }
 
 void uart_device::update_timer_rxd(s32 count) {
 	uint8_t ch;
+	s32 usec_delay = 0;
     switch(m_phase_rxd) {
     case 0: // none, polling timer
         if (m_data_r_ready == 0 && kbhit()) {
@@ -135,23 +136,26 @@ void uart_device::update_timer_rxd(s32 count) {
             ch = getch();
 			// never occur overrun
 			m_data_r = ch;
+			if (m_fd != 0 && (ch == '\r' || ch == 'n')) {
+				usec_delay = 100000;	// 100msec
+			}
 			m_data_r_ready = 1;
 			m_rxrdy_handler(1);		// asser RxRDY
 			m_phase_rxd++;
-			m_timer_rxd->adjust(attotime::from_usec(20 * get_tick()));
+			m_timer_rxd->adjust(attotime::from_usec(usec_delay + 20 * get_tick()));
         } else {
 			// keep to poll it
-			m_timer_rxd->adjust(attotime::from_usec(get_tick()));
+			m_timer_rxd->adjust(attotime::from_usec(20 * get_tick()));
 		}
         break;
 	case 1: // character timer expires, return to mode 0
 		m_phase_rxd = 0;
-		m_timer_rxd->adjust(attotime::from_usec(get_tick()));
+		m_timer_rxd->adjust(attotime::from_usec(20 * get_tick()));
 		break;
 	default:
 		fprintf(stderr, "update_timer_rxd: unexpected state\n");
 		m_phase_rxd = 0;
-		m_timer_rxd->adjust(attotime::from_usec(get_tick()));
+		m_timer_rxd->adjust(attotime::from_usec(20 * get_tick()));
 		break;
     } 
 }
@@ -167,7 +171,7 @@ void uart_device::update_timer_txd(int count) {
 		m_phase_txd = 0;
 		// flush output char if data_w has one
 		if (m_data_w_ready) {
-			putchar(m_data_w);
+			putch(m_data_w);
 			m_data_w_ready = 0;
 			m_data_w_empty = 0;
 		} else {
@@ -288,3 +292,39 @@ int uart_device::getch(void)
         ch = 0x08;
     return ch;
 }
+
+void uart_device::putch(uint8_t data)
+{
+	static tick_t start = 0;
+	tick_t current;
+	if (data == 0x0b) {
+			// Ctrl-K
+		start = get_current_tick();
+		fprintf(stderr, "start\n");
+	} else if (data == 0x0c) {
+		current = get_current_tick() - start;
+		fprintf(stderr, "time: %dmsec\n", current/100);
+	} else {
+		printf("%c", data);
+	}
+
+}
+
+//
+// get_100usec ... with clock_gettime, a new POSIC standard
+//
+tick_t uart_device::get_current_tick(void)
+{
+	struct timespec ts;
+	tick_t current;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	// so far 10us tick
+	current = (unsigned long int)ts.tv_sec * 100000L + ts.tv_nsec / 10000L;
+	if (m_tick_start == 0)
+		m_tick_start = current;
+	current -= m_tick_start;
+	//fprintf(stderr,"[%d]", current);
+	return current;
+}
+
+
