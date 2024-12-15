@@ -1,5 +1,5 @@
 // license:BSD-3-Clause
-// copyright-holders:Norihir Kumagai
+// copyright-holders:Norihiro Kumagai
 /******************************************************************************
 
   SBC test board system
