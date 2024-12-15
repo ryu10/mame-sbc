@@ -86,8 +86,10 @@ uint8_t uart_device::update_status_r(void)
 
 uint8_t uart_device::data_r(void)
 {
-	if (m_data_r_ready)
+	if (m_data_r_ready) {
 		m_data_r_ready = 0;
+		m_rxrdy_handler(0);
+	}
 	return m_data_r;
 }
 
@@ -111,8 +113,6 @@ uint8_t uart_device::status_r(void)
     return m_status;
 }
 
-// timer
-
 // timer period
 // baudrate to timer cycle period convertion
 time_t uart_device::get_tick(void)
@@ -132,11 +132,11 @@ void uart_device::update_timer_rxd(s32 count) {
     case 0: // none, polling timer
         if (m_data_r_ready == 0 && kbhit()) {
             // read and fill, shift to phase 1
-            ch = getchar();
+            ch = getch();
 			// never occur overrun
 			m_data_r = ch;
 			m_data_r_ready = 1;
-
+			m_rxrdy_handler(1);		// asser RxRDY
 			m_phase_rxd++;
 			m_timer_rxd->adjust(attotime::from_usec(20 * get_tick()));
         } else {

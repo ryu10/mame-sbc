@@ -93,6 +93,7 @@ private:
     uint8_t m_data_r;
     uint8_t m_data_w;
 
+protected:
     // internal state
 	int m_data_r_ready = 0;
     int m_data_w_ready = 0;
@@ -100,6 +101,7 @@ private:
 	// error flag
 	int m_data_r_overrun = 1;
 	int m_data_w_overrun = 0;
+private:
 
 	// lower layer (terminal device)
 	int kbhit(void);
@@ -118,4 +120,30 @@ private:
 };
 
 DECLARE_DEVICE_TYPE(UART, uart_device)
+
+/****************************************************
+ derived class macro ... for specific UART chips
+*****************************************************/
+#define DECLARE_DERIVED_UART_DEVICE(NAME, derived_device) \
+DECLARE_DEVICE_TYPE(NAME, derived_device)\
+class derived_device : public uart_device {\
+public:\
+	derived_device(\
+		const machine_config &mconfig,\
+		const char *tag,\
+		device_t *owner,\
+		u32 clock)\
+	: uart_device(mconfig, NAME, tag, owner, clock) {}\
+protected:\
+	derived_device(\
+		const machine_config &mconfig,\
+		device_type type,\
+		const char *tag,\
+		device_t *owner,\
+		u32 clock)\
+	: uart_device(mconfig, type, tag, owner, clock) {}\
+	uint8_t update_status_r(void) override;\
+};\
+
+
 #endif /* HEADER_TTY */

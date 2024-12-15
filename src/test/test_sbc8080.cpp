@@ -8,7 +8,7 @@
 
 #include "emu.h"	// for offs_t declaration
 #include "cpu/z80/z80.h"
-#include "test_emuz80.h"
+#include "test_sbc8080.h"
 #include "machine/uart_tty.h"
 
 #include <cstdio>
@@ -17,6 +17,33 @@
 //
 // test_state : test application framework
 //
+
+/****************************************************************
+ I8251 status_r 
+******************************************************************/
+DECLARE_DERIVED_UART_DEVICE(UART_I8251, uart_i8251_device)
+
+uint8_t uart_i8251_device::update_status_r(void)
+{
+    // compose bits of status register
+#define TXEMPTY_Bit (1<<2)
+#define RXRDY_Bit (1<<1)
+#define TXRDY_Bit (1<<0)
+    uint8_t c = 0;
+    if (m_data_r_ready) {
+        c |= RXRDY_Bit;
+	}
+    if (m_data_w_ready == 0 && m_data_w_empty == 1) {
+        c |= TXRDY_Bit;
+	}
+	if (m_data_w_empty == 1) {
+		c |= TXEMPTY_Bit;
+	}
+	//fprintf(stderr, "(i8251:%02x)\n", c);
+	return c;
+}
+
+DEFINE_DEVICE_TYPE(UART_I8251, uart_i8251_device, "uart_i8251", "uart_8251 on tty driver")
 
 // Z80 and generic UART version
 
@@ -27,7 +54,7 @@ public:
 		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_main_ram(*this, "main_ram"),
-		m_uart(*this, "uart")
+		m_uart(*this, "uart_i8251")
 	{
 		fprintf(stderr, "test_state: constructor\n");
 	}
@@ -46,7 +73,7 @@ public:
 private:
 	required_device<z80_device> m_maincpu;
 	required_shared_ptr<uint8_t> m_main_ram;
-	required_device<uart_device> m_uart;
+	required_device<uart_i8251_device> m_uart;
 
 	virtual void machine_reset() override ATTR_COLD;
 
@@ -72,7 +99,7 @@ uint8_t test_state::uart_dreg_r() { return m_uart->data_r(); }
 void    test_state::uart_dreg_w(uint8_t data) { m_uart->data_w(data); }
 uint8_t test_state::uart_creg_r() {	return m_uart->status_r(); }
 void    test_state::uart_creg_w(uint8_t data) {
-	fprintf(stderr, "uart_creg_w: %02x\n", data);
+	//fprintf(stderr, "uart_creg_w: %02x\n", data);
 }
 
 /******************************************************************************
@@ -82,8 +109,6 @@ void    test_state::uart_creg_w(uint8_t data) {
 void test_state::z80_mem(address_map &map)
 {
 	map(0x0000, 0xffff).ram().share("main_ram");
-	map(0xe000, 0xe000).rw(FUNC(test_state::uart_dreg_r),FUNC(test_state::uart_dreg_w));
-	map(0xe001, 0xe001).rw(FUNC(test_state::uart_creg_r),FUNC(test_state::uart_creg_w));
 }
 
 void test_state::io_map(address_map &map)
@@ -111,9 +136,10 @@ void test_state::test(machine_config &config)
 {
 	/* basic machine hardware */
 	Z80(config, m_maincpu, XTAL(20'000'000));
-	UART(config, m_uart, 9600);
 	m_maincpu->set_addrmap(AS_PROGRAM, &test_state::z80_mem);
 	m_maincpu->set_addrmap(AS_IO, &test_state::io_map);
+	UART_I8251(config, m_uart, 9600);
+	m_uart->rxrdy_handler().set(*this, FUNC(test_state::sbc_int_w));
 }
 
 /*
@@ -122,8 +148,10 @@ void test_state::test(machine_config &config)
 
 void test_state::sbc_int_w(int state)
 {
+	//fprintf(stderr, "(%d)", state);
 	m_maincpu->set_input_line(INPUT_LINE_IRQ0, state);
 }
+
 
 /******************************************************************************
  ROM Definitions
