@@ -8,9 +8,7 @@
 
 #include "emu.h"	// for offs_t declaration
 #include "cpu/z80/z80.h"
-#include "machine/i8251.h"
-#include "test.h"
-#include "interface.h"
+#include "test_emuz80.h"
 #include "uart_tty.h"
 
 #include <cstdio>
