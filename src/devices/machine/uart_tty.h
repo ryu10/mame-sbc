@@ -55,7 +55,7 @@ protected:
 			device_type type,
 			const char *tag,
 			device_t *owner,
-			uint32_t clock);
+			uint32_t baudrate);
 
 	// device_t implementation
 	virtual void device_start() override ATTR_COLD;
@@ -79,8 +79,8 @@ private:
 	emu_timer *m_timer_txd;
     emu_timer *m_timer_rxd;
     // speed (bps)
-	time_t set_timer(time_t baudrate);
-    time_t m_tick;      // unit: usec, 1/2 pulse-width, or 1/4 cycle-period-width
+	time_t get_tick(void);	// convert m_baudrate to tick (1/2 cycle-width)
+	void set_baudrate(time_t baudrate);
 	// internal state
 	int m_phase_rxd;    // 0: none, 1: after-receive dead mode, 2: over
 	int m_phase_txd;

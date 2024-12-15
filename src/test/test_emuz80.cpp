@@ -9,7 +9,7 @@
 #include "emu.h"	// for offs_t declaration
 #include "cpu/z80/z80.h"
 #include "test_emuz80.h"
-#include "uart_tty.h"
+#include "machine/uart_tty.h"
 
 #include <cstdio>
 #include <cstdlib>

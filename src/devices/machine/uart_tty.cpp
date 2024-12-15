@@ -16,12 +16,15 @@
 //
 DEFINE_DEVICE_TYPE(UART, uart_device, "uart", "uart on tty driver")
 
-uart_device::uart_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
-	: device_t(mconfig, type, tag, owner, clock),
-    m_tick(set_timer(clock)), 
+uart_device::uart_device(const machine_config &mconfig, 
+						device_type type, 
+						const char *tag, 
+						device_t *owner, 
+						uint32_t baudrate)
+	: device_t(mconfig, type, tag, owner, baudrate),
 	m_rxrdy_handler(*this)
 {
-	fprintf(stderr, "uart_device: constructor, timer_period = %d\n", clock);
+	fprintf(stderr, "uart_device: constructor, baudrate = %d\n", m_clock);
 }
 
 uart_device::uart_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
@@ -31,7 +34,7 @@ uart_device::uart_device(const machine_config &mconfig, const char *tag, device_
 
 void uart_device::device_start(void)
 {
-	fprintf(stderr, "uart_device::device_start\n");
+	fprintf(stderr, "uart_device::device_start, tick = %ld\n", get_tick());
     m_timer_txd = timer_alloc(FUNC(uart_device::update_timer_txd), this);
     m_timer_rxd = timer_alloc(FUNC(uart_device::update_timer_rxd), this);
 	reset_input_device();
@@ -44,7 +47,7 @@ void uart_device::device_reset(void)
 	m_data_r = 0xe5;
 	m_data_r_ready = 0;
 	m_phase_rxd = 0;
-	m_timer_rxd->reset(attotime::from_usec(m_tick));
+	m_timer_rxd->reset(attotime::from_usec(get_tick()));
 	// reset txd
 	m_data_w = 0xe3;
 	m_data_w_empty = 1;
@@ -111,15 +114,17 @@ uint8_t uart_device::status_r(void)
 // timer
 
 // timer period
-time_t uart_device::set_timer(time_t baudrate)
+// baudrate to timer cycle period convertion
+time_t uart_device::get_tick(void)
 {
+	// tick represent period-length corresponding to 1/2 of baudrate
 	time_t tick = 50;	// about 9800bps ... 50us per pulse-width
-	if (baudrate > 0)
-		tick  = 500000 / baudrate;
-	// 1/2 cycle (1 pulse-width)
-	fprintf(stderr, "tick: %ld usec\n", tick);
+	if (m_clock > 0)
+		tick  = 500000 / m_clock;
 	return tick;
 }
+
+void uart_device::set_baudrate(time_t baudrate) { m_clock = baudrate; }
 
 void uart_device::update_timer_rxd(s32 count) {
 	uint8_t ch;
@@ -133,27 +138,27 @@ void uart_device::update_timer_rxd(s32 count) {
 			m_data_r_ready = 1;
 
 			m_phase_rxd++;
-			m_timer_rxd->adjust(attotime::from_usec(20 * m_tick));
+			m_timer_rxd->adjust(attotime::from_usec(20 * get_tick()));
         } else {
 			// keep to poll it
-			m_timer_rxd->adjust(attotime::from_usec(m_tick));
+			m_timer_rxd->adjust(attotime::from_usec(get_tick()));
 		}
         break;
 	case 1: // character timer expires, return to mode 0
 		m_phase_rxd = 0;
-		m_timer_rxd->adjust(attotime::from_usec(m_tick));
+		m_timer_rxd->adjust(attotime::from_usec(get_tick()));
 		break;
 	default:
 		fprintf(stderr, "update_timer_rxd: unexpected state\n");
 		m_phase_rxd = 0;
-		m_timer_rxd->adjust(attotime::from_usec(m_tick));
+		m_timer_rxd->adjust(attotime::from_usec(get_tick()));
 		break;
     } 
 }
 
 void uart_device::start_timer_txd(s32 count) {
 	m_phase_txd = 1;
-	m_timer_txd->adjust(attotime::from_usec(20 * m_tick));
+	m_timer_txd->adjust(attotime::from_usec(20 * get_tick()));
 }
 
 void uart_device::update_timer_txd(int count) {
