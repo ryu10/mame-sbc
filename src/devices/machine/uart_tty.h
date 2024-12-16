@@ -119,8 +119,8 @@ private:
 	void putch(uint8_t ch);
 #ifdef REDIRECT
 	// input redirect
-	FILE *m_fp = NULL;
-	int m_file_flag = 1;
+	//FILE *m_fp = NULL;
+	int m_file_flag = 0;
 	const char *m_filename = "ASCIIART.BAS";
 #endif
     int m_fd = STDIN_FILENO;

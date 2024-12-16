@@ -9,6 +9,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <inttypes.h>
+#include <fcntl.h>
 #include "uart_tty.h"
 
 //
@@ -107,9 +108,22 @@ void uart_device::data_w(uint8_t data)
 	}
 }
 
+#define MAX_COUNT 100000
 uint8_t uart_device::status_r(void)
 {
     m_status = update_status_r();
+#if 0
+	static int count = MAX_COUNT;
+	if (m_status != 2) {
+		//fprintf(stderr, "%d", m_status);
+		count = MAX_COUNT;
+	} else {
+		if (count-- < 0) {
+			//fprintf(stderr, ".");
+			count = MAX_COUNT;
+		}
+	}
+#endif
     return m_status;
 }
 
@@ -117,10 +131,12 @@ uint8_t uart_device::status_r(void)
 // baudrate to timer cycle period convertion
 time_t uart_device::get_tick(void)
 {
-	// tick represent period-length corresponding to 1/2 of baudrate
-	time_t tick = 50;	// about 9800bps ... 50us per pulse-width
-	if (m_clock > 0)
-		tick  = 500000 / m_clock;
+	// tick represent period-length corresponding 
+	// to 1/2 of character-seiding
+	time_t tick = 1000;	// about 9800bps ... 1ms per character-width
+	if (0 < m_clock && m_clock < 5000)
+		tick  = 10000000 / m_clock;
+	//fprintf(stderr,"[%ld]", tick);
 	return tick;
 }
 
@@ -142,27 +158,27 @@ void uart_device::update_timer_rxd(s32 count) {
 			m_data_r_ready = 1;
 			m_rxrdy_handler(1);		// asser RxRDY
 			m_phase_rxd++;
-			m_timer_rxd->adjust(attotime::from_usec(usec_delay + 20 * get_tick()));
+			m_timer_rxd->adjust(attotime::from_usec(usec_delay + get_tick()));
         } else {
 			// keep to poll it
-			m_timer_rxd->adjust(attotime::from_usec(20 * get_tick()));
+			m_timer_rxd->adjust(attotime::from_usec(get_tick()));
 		}
         break;
 	case 1: // character timer expires, return to mode 0
 		m_phase_rxd = 0;
-		m_timer_rxd->adjust(attotime::from_usec(20 * get_tick()));
+		m_timer_rxd->adjust(attotime::from_usec(get_tick()));
 		break;
 	default:
 		fprintf(stderr, "update_timer_rxd: unexpected state\n");
 		m_phase_rxd = 0;
-		m_timer_rxd->adjust(attotime::from_usec(20 * get_tick()));
+		m_timer_rxd->adjust(attotime::from_usec(get_tick()));
 		break;
     } 
 }
 
 void uart_device::start_timer_txd(s32 count) {
 	m_phase_txd = 1;
-	m_timer_txd->adjust(attotime::from_usec(20 * get_tick()));
+	m_timer_txd->adjust(attotime::from_usec(get_tick()));
 }
 
 void uart_device::update_timer_txd(int count) {
@@ -198,7 +214,6 @@ void uart_device::reset_input_device(void)
 
 #ifdef REDIRECT
 	// input redirect
-	m_fp = NULL;
 	m_file_flag = 1;
 	m_filename = "ASCIIART.BAS";
 	m_fd = STDIN_FILENO;
@@ -210,11 +225,10 @@ void uart_device::reset_asciiart_input(void)
 #ifdef REDIRECT
 	fprintf(stderr, "open asciiart\n");
     // startup key-in from ASCIIART.BAS
-    if ((m_fp = fopen(m_filename, "r")) == NULL) {
+    if ((m_fd = open(m_filename, O_RDONLY)) < 0) {
         fprintf(stderr, "%s cannot open\n", m_filename);
     }
-	if (m_fp) {
-		m_fd = fileno(m_fp);
+	if (m_fd != STDIN_FILENO) {
 		fprintf(stderr, "m_fd: %d\n", m_fd);
 	}
 #endif
@@ -261,36 +275,33 @@ int uart_device::kbhit(void)
 
 int uart_device::getch(void)
 {
-    int ch;
+    int result;
+	uint8_t ch = 0;
 
+	result = read(m_fd, &ch, 1);
+	if (result == 1) {
+		// read successfully, from any input
+		if (m_fd == STDIN_FILENO) {
+			if (ch == 0x0f) {
+				reset_asciiart_input();
+				return 0;
+			}
+			// key input conversion
+		    if (ch == 0x7f)
+    		    ch = 0x08;
+		}
+		return ch;
+	} else if (result == 0) {
 #ifdef REDIRECT
-    // redirected input
-    if (m_file_flag && m_fp) {
-        ch = fgetc(m_fp);
-        if (ch != EOF) {
-			fprintf(stderr, "%c", ch);
-            return ch;
-        }
-        fclose(m_fp);
-        m_fp = NULL;
-        m_file_flag = 0;
-		m_fd = STDIN_FILENO;
-        // falling down
-    }
+		// end of file, close and redirect
+		if (m_fd != STDIN_FILENO) {
+			close(m_fd);
+			m_fd = STDIN_FILENO;
+		}
 #endif
-
-  	ch = getchar();
-#ifdef REDIRECT
-	switch (ch) {
-	case 0x0f:
-		reset_asciiart_input();
-		break;
 	}
-#endif
-
-    if (ch == 0x7f)
-        ch = 0x08;
-    return ch;
+	// error, ignored
+	return 0;
 }
 
 void uart_device::putch(uint8_t data)
@@ -305,7 +316,8 @@ void uart_device::putch(uint8_t data)
 		current = get_current_tick() - start;
 		fprintf(stderr, "time: %dmsec\n", current/100);
 	} else {
-		printf("%c", data);
+		write(STDOUT_FILENO, &data, 1);
+		//printf("%c", data);
 	}
 
 }
@@ -326,5 +338,3 @@ tick_t uart_device::get_current_tick(void)
 	//fprintf(stderr,"[%d]", current);
 	return current;
 }
-
-
