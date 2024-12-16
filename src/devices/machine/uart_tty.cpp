@@ -108,22 +108,9 @@ void uart_device::data_w(uint8_t data)
 	}
 }
 
-#define MAX_COUNT 100000
 uint8_t uart_device::status_r(void)
 {
     m_status = update_status_r();
-#if 0
-	static int count = MAX_COUNT;
-	if (m_status != 2) {
-		//fprintf(stderr, "%d", m_status);
-		count = MAX_COUNT;
-	} else {
-		if (count-- < 0) {
-			//fprintf(stderr, ".");
-			count = MAX_COUNT;
-		}
-	}
-#endif
     return m_status;
 }
 
