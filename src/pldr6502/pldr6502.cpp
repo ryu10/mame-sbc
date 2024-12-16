@@ -9,8 +9,7 @@
 ******************************************************************************/
 
 #include "emu.h"
-// #include "cpu/z80/z80.h"
-#include "cpu/m6800/m6800.h"
+#include "cpu/m6502/m6502.h"
 #include "pldr6502.h"
 #include "interface.h"
 #include "osd.h"
@@ -153,11 +152,10 @@ INPUT_PORTS_END
 void pldr6502_state::pldr6502(machine_config &config)
 {
 	/* basic machine hardware */
-	//Z80(config, m_maincpu, XTAL(3'579'545));
-	// Z80(config, m_maincpu, XTAL(40'000'000));
-	M6800(config, m_maincpu, XTAL(16'000'000 / 4));
+	// R65C02(config, m_maincpu, XTAL(16'000'000 / 4));
+	// W65C02S(config, m_maincpu, XTAL(16'000'000 / 4));
+	M6502(config, m_maincpu, XTAL(16'000'000) / 16);
 	m_maincpu->set_addrmap(AS_PROGRAM, &pldr6502_state::m68_mem);
-	// m_maincpu->set_addrmap(AS_IO, &pldr6502_state::io_map);
 }
 
 
@@ -175,4 +173,4 @@ ROM_END
 ******************************************************************************/
 
 /*    YEAR  NAME      PARENT      COMPAT  MACHINE   INPUT   STATE         INIT        COMPANY                         FULLNAME                            FLAGS */
-COMP( 2024, pldr6502,   0,          0,      pldr6502,   pldr6502, pldr6502_state, empty_init, "VintageChips", "pldr6502 (m6800+6850)", MACHINE_NO_SOUND_HW )
+COMP( 2024, pldr6502,   0,          0,      pldr6502,   pldr6502, pldr6502_state, empty_init, "VintageChips, Houmei", "pldr6502 (6502+6850)", MACHINE_NO_SOUND_HW )
