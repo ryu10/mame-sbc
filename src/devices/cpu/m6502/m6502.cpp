@@ -10,7 +10,7 @@
 
 #include "emu.h"
 #include "m6502.h"
-// #include "m6502d.h"
+#include "m6502d.h"
 
 DEFINE_DEVICE_TYPE(M6502, m6502_device, "m6502", "MOS Technology 6502")
 DEFINE_DEVICE_TYPE(M6512, m6512_device, "m6512", "MOS Technology 6512")

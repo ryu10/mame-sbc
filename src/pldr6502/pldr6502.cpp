@@ -8,8 +8,25 @@
 
 ******************************************************************************/
 
+#define P_M6502 0
+#define P_R65C02 1
+#define P_W65C02S 2
+#ifndef P65TYPE
+// Choose one from above
+#define P65TYPE P_W65C02S
+#endif
+
+
 #include "emu.h"
+
+#if P65TYPE == P_R65C02
+#include "cpu/m6502/r65c02.h"
+#elif P65TYPE == P_W65C02S
+#include "cpu/m6502/w65c02s.h"
+#else 
 #include "cpu/m6502/m6502.h"
+#endif
+
 #include "pldr6502.h"
 #include "interface.h"
 #include "osd.h"
@@ -59,14 +76,14 @@ void pldr6502_state::machine_reset()
 	// memcpy(m_main_ram+0xe000, pldr6502_binary, sizeof pldr6502_binary);
 	memcpy(m_main_rom, pldr6502_binary, sizeof pldr6502_binary);
 	fprintf(stderr, "memcpy: %ld bytes to main_rom\n", sizeof pldr6502_binary);
-	fprintf(stderr, "reset vector: %x %x \n", m_main_rom[0xfffe - 0xe000], m_main_rom[0xffff - 0xe000]);
+	fprintf(stderr, "reset vector: %02X %02X \n", m_main_rom[0xfffd - 0xe000], m_main_rom[0xfffc - 0xe000]);
 	// serial reset
 	input_device_reset();
 	output_device_reset();
 	fprintf(stderr, "machine_reset\n");
 
-	m_maincpu->set_input_line(INPUT_LINE_RESET, ASSERT_LINE);
-	m_maincpu->set_input_line(INPUT_LINE_RESET, CLEAR_LINE);
+	// m_maincpu->set_input_line(INPUT_LINE_RESET, ASSERT_LINE);
+	// m_maincpu->set_input_line(INPUT_LINE_RESET, CLEAR_LINE);
 }
 
 
@@ -152,9 +169,13 @@ INPUT_PORTS_END
 void pldr6502_state::pldr6502(machine_config &config)
 {
 	/* basic machine hardware */
-	// R65C02(config, m_maincpu, XTAL(16'000'000 / 4));
-	// W65C02S(config, m_maincpu, XTAL(16'000'000 / 4));
-	M6502(config, m_maincpu, XTAL(16'000'000) / 16);
+#if P65TYPE == P_R65C02
+	R65C02(config, m_maincpu, XTAL(16'000'000) / 4);
+#elif P65TYPE == P_W65C02S
+	W65C02S(config, m_maincpu, XTAL(16'000'000) / 4);
+#else 
+	M6502(config, m_maincpu, XTAL(16'000'000) / 4);
+#endif
 	m_maincpu->set_addrmap(AS_PROGRAM, &pldr6502_state::m68_mem);
 }
 
