@@ -13,7 +13,7 @@
 #define P_W65C02S 2
 #ifndef P65TYPE
 // Choose one from above
-#define P65TYPE P_W65C02S
+#define P65TYPE P_M6502
 #endif
 
 
