@@ -761,6 +761,7 @@ end
 --@src/devices/cpu/m6502/st2204.h,CPUS["ST2XXX"] = true
 --@src/devices/cpu/m6502/st2205u.h,CPUS["ST2XXX"] = true
 --@src/devices/cpu/m6502/w65c02s.h,CPUS["M6502"] = true
+--@src/devices/cpu/m6502/rp2a03.h,CPUS["M6502"] = true
 --@src/devices/cpu/m6502/xavix.h,CPUS["XAVIX"] = true
 --@src/devices/cpu/m6502/xavix.h,CPUS["XAVIX2000"] = true
 
@@ -814,6 +815,8 @@ if CPUS["M6502"] then
 		MAME_DIR .. "src/devices/cpu/m6502/r65c02.h",
 		MAME_DIR .. "src/devices/cpu/m6502/r65c19.cpp",
 		MAME_DIR .. "src/devices/cpu/m6502/r65c19.h",
+		MAME_DIR .. "src/devices/cpu/m6502/rp2a03.cpp",
+		MAME_DIR .. "src/devices/cpu/m6502/rp2a03.h",
 		MAME_DIR .. "src/devices/cpu/m6502/w65c02s.cpp",
 		MAME_DIR .. "src/devices/cpu/m6502/w65c02s.h",
 	}

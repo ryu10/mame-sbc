@@ -11,9 +11,10 @@
 #define P_M6502 0
 #define P_R65C02 1
 #define P_W65C02S 2
+#define P_RP2A03 3
 #ifndef P65TYPE
 // Choose one from above
-#define P65TYPE P_M6502
+#define P65TYPE P_RP2A03
 #endif
 
 
@@ -23,6 +24,8 @@
 #include "cpu/m6502/r65c02.h"
 #elif P65TYPE == P_W65C02S
 #include "cpu/m6502/w65c02s.h"
+#elif P65TYPE == P_RP2A03
+#include "cpu/m6502/rp2a03.h"
 #else 
 #include "cpu/m6502/m6502.h"
 #endif
@@ -173,6 +176,8 @@ void pldr6502_state::pldr6502(machine_config &config)
 	R65C02(config, m_maincpu, XTAL(16'000'000) / 4);
 #elif P65TYPE == P_W65C02S
 	W65C02S(config, m_maincpu, XTAL(16'000'000) / 4);
+#elif P65TYPE == P_RP2A03
+	RP2A03_CORE(config, m_maincpu, XTAL(16'000'000) / 4);
 #else 
 	M6502(config, m_maincpu, XTAL(16'000'000) / 4);
 #endif
