@@ -71,3 +71,7 @@ https://github.com/ryu10/mame-sbc/tree/sbc68-sync
 * sbc6800 と sbc6809 を含むブランチです。
 * このファイル `LOG-sbc68.md` を追加しました。
 
+## pldr6502
+
+pldr6502 マシンを追加. m6502 CPU を復元
+
