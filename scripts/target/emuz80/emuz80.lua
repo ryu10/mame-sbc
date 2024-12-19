@@ -10,8 +10,8 @@ function standalone()
 		MAME_DIR .. "src/emuz80/emuz80.cpp",
 		MAME_DIR .. "src/emuz80/emuz80.h",
 		MAME_DIR .. "src/emuz80/interface.h",
-		MAME_DIR .. "src/emuz80/osd.h",
-		MAME_DIR .. "src/emuz80/osd_linux.c",
+		--MAME_DIR .. "src/emuz80/osd.h",
+		--MAME_DIR .. "src/emuz80/osd_linux.c",
 	}
 end
 

@@ -8,7 +8,10 @@
 --   Rules for building machine cores
 --
 ----------------------------------------------------------------------------
-
+files {
+	MAME_DIR .. "src/devices/machine/uart_tty.cpp",
+	MAME_DIR .. "src/devices/machine/uart_tty.h",
+}
 files {
 	MAME_DIR .. "src/devices/machine/clock.cpp",
 	MAME_DIR .. "src/devices/machine/clock.h",
