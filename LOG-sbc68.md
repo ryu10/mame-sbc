@@ -22,7 +22,7 @@ TARGET = sbc6800
 
 電脳伝説 @vintagechips 様作 sbc6800 のエミュレータです。Mikbug が起動します。
 
-* メインディレクトリ: `src/sbc6800`
+* メインディレクトリ: [/src/sbc6800](/src/sbc6800)
 * ビルドスクリプト: `scripts/target/sbc6800/sbc6800.lua`
 * m6800 CPU コード (本家 mame コミット [4358422](https://github.com/mamedev/mame/tree/4358422) から): `src/devices/cpu/m6800`
 
@@ -40,12 +40,6 @@ TARGET = sbc6800
 * ファイル構成は `sbc6800` と同様
 * `src/devices/cpu/m6502` 以下を本家 mame (コミット [4358422](https://github.com/mamedev/mame/tree/4358422) ) から復元
 
-## sbc6800 利用のヒント
-
-* メモリマップは `src/sbc6800/sbc6800.cpp` の `sbc6800_state::m68_mem()` で定義されます。
-* ROM の内容は `sbc6800_state::machine_reset()` 内の `memcpy()` 行で読み込まれます。
-* ROM データは `src/sbc6800/sbc6800.h` で定義されています。内容は Mikbug と MPU リセットベクタです。
-
 ## 作成手順
 
 * `src/emuz80` をひな形に
@@ -58,6 +52,12 @@ TARGET = sbc6800
         * `emuz80.lua` をひな形に新規作成
     * `scripts/src/cpu.lua` 
         * m6800 関連行をコメント解除
+
+## sbc6800 利用のヒント
+
+* メモリマップは `src/sbc6800/sbc6800.cpp` の `sbc6800_state::m68_mem()` で定義されます。
+* ROM の内容は `sbc6800_state::machine_reset()` 内の `memcpy()` 行で読み込まれます。
+* ROM データは `src/sbc6800/sbc6800.h` で定義されています。内容は Mikbug と MPU リセットベクタです。
 
 ## pldr6502 の CPU 切り替え
 
