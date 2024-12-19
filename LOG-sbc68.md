@@ -20,6 +20,11 @@ TARGET = sbc6800
 
 電脳伝説 @vintagechips 様作 SBC6800 のエミュレータです。Mikbug が起動します。
 
+* マシン記述: [src/sbc6800](src/sbc6800)
+* m6800 プロセッサ: [src/devices/cpu/m6800](src/devices/cpu/m6800) 
+* ビルドスクリプト: [scripts/target/sbc6800/sbc6800.lua](scripts/target/sbc6800/sbc6800.lua), [scripts/src/cpu.lua](scripts/src/cpu.lua)
+
+
 ### sbc6800 作成手順
 
 * [src/emuz80](src/emuz80) をひな形に
