@@ -14,7 +14,7 @@
 #define P_RP2A03 3
 #ifndef P65TYPE
 // Choose one from above
-#define P65TYPE P_RP2A03
+#define P65TYPE P_W65C02S
 #endif
 
 
