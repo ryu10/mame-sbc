@@ -30,14 +30,14 @@ TARGET = sbc6800
 電脳伝説 @vintagechips 様作 SBC6809 のエミュレータです。Basic が起動します。
 
 * ファイル構成は sbc6800 と同様
-* [src/devices/cpu/m6809](src/devices/cpu/m6809) 以下を本家 mame (コミット [4358422](https://github.com/mamedev/mame/tree/4358422) ) から復元
+* [src/devices/cpu/m6809](src/devices/cpu/m6809) 以下を本家 mame から復元
 
 ## pldr6502
 
 ほうめい @houmei 様作 PLDR6502 のエミュレータです。元々は SBC6800 のパイルダーカード (ドーターカード) として設計されています。Universal Monitor が起動します。
 
 * ファイル構成は sbc6800 と同様
-* [src/devices/cpu/m6502](src/devices/cpu/m6502) 以下を本家 mame (コミット [4358422](https://github.com/mamedev/mame/tree/4358422) ) から復元
+* [src/devices/cpu/m6502](src/devices/cpu/m6502) 以下を本家 mame から復元
 
 ## 作成手順
 
