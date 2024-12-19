@@ -24,6 +24,16 @@ TARGET = sbc6800
 * m6800 プロセッサ: [src/devices/cpu/m6800](src/devices/cpu/m6800) 
 * ビルドスクリプト: [scripts/target/sbc6800/sbc6800.lua](scripts/target/sbc6800/sbc6800.lua), [scripts/src/cpu.lua](scripts/src/cpu.lua)
 
+### sbc6800 利用のヒント
+
+* メモリマップは [src/sbc6800/sbc6800.cpp](src/sbc6800/sbc6800.cpp) の `sbc6800_state::m68_mem()` で定義されます。
+* ROM の内容は `sbc6800_state::machine_reset()` 内の `memcpy()` 行で読み込まれます。
+* ROM データは [src/sbc6800/sbc6800.h](src/sbc6800/sbc6800.h) で定義されています。内容は Mikbug と MPU リセットベクタです。
+* `hexdump` コマンドを使って、bin ファイルから C の hex 配列 (の要素部分) を生成できます。
+
+```
+hexdump -v -e '8/1 "0x%02x, " "\n"' unimon.bin > unimon_c_hex.txt
+```
 
 ### sbc6800 作成手順
 
@@ -35,12 +45,6 @@ TARGET = sbc6800
 * ビルドスクリプトを編集
     * [scripts/target/sbc6800/sbc6800.lua](scripts/target/sbc6800/sbc6800.lua) (新規作成)
     * [scripts/src/cpu.lua](scripts/src/cpu.lua) (m6800 関連行をコメント解除)
-
-### sbc6800 利用のヒント
-
-* メモリマップは [src/sbc6800/sbc6800.cpp](src/sbc6800/sbc6800.cpp) の `sbc6800_state::m68_mem()` で定義されます。
-* ROM の内容は `sbc6800_state::machine_reset()` 内の `memcpy()` 行で読み込まれます。
-* ROM データは [src/sbc6800/sbc6800.h](src/sbc6800/sbc6800.h) で定義されています。内容は Mikbug と MPU リセットベクタです。
 
 ## sbc6809
 
