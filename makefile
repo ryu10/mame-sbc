@@ -19,10 +19,10 @@
 
 # TARGET = mame
 # TARGET = test
-TARGET = emuz80
+# TARGET = emuz80
 # TARGET = sbc8080
 # TARGET = sbc6800
-# TARGET = sbc6809
+TARGET = sbc6809
 # SUBTARGET = tiny
 # TOOLS = 1
 # EMULATOR = 1
