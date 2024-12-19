@@ -14,16 +14,28 @@ TARGET = sbc6800
 # TARGET = pldr6502
 ```
 
-その後、`mame-sbc` ディレクトリ直下で `mame -j5` を実行します。ビルド環境のコア数に合わせて数値 `5` を調節します。詳細は [INSTALL.md](/INSTALL.md) を参照してください。
+その後、`mame-sbc` トップディレクトリで `mame -j5` を実行します。ビルド環境のコア数に合わせて数値 `5` を調節します。詳細は [INSTALL.md](/INSTALL.md) を参照してください。
 
 ## sbc6800
 
 電脳伝説 @vintagechips 様作 SBC6800 のエミュレータです。Mikbug が起動します。
 
-* メインディレクトリ: [src/sbc6800](src/sbc6800)
-* ビルドスクリプト: [scripts/target/sbc6800/sbc6800.lua](scripts/target/sbc6800/sbc6800.lua)、[scripts/src/cpu.lua](scripts/src/cpu.lua)
-* m6800 エミュレーション: [src/devices/cpu/m6800](src/devices/cpu/m6800)
-    * 本家 mame コミット [4358422](https://github.com/mamedev/mame/tree/4358422) から復元
+### sbc6800 作成手順
+
+* [src/emuz80](src/emuz80) をひな形に
+* [src/sbc6800](src/sbc6800) 以下にマシンを記述
+    * 起動時に RESET ピン操作が必要 (sbc6809, pldr6502 では不要)
+* [src/devices/cpu/m6800](src/devices/cpu/m6800) 以下を本家 mame から復元
+    * 本家 mame のコミット [4358422](https://github.com/mamedev/mame/tree/4358422) を使用する (mame-sbc 系統がフォークしたコミットに十分近いと推測される)
+* ビルドスクリプトを編集
+    * [scripts/target/sbc6800/sbc6800.lua](scripts/target/sbc6800/sbc6800.lua) (新規作成)
+    * [scripts/src/cpu.lua](scripts/src/cpu.lua) (m6800 関連行をコメント解除)
+
+### sbc6800 利用のヒント
+
+* メモリマップは [src/sbc6800/sbc6800.cpp](src/sbc6800/sbc6800.cpp) の `sbc6800_state::m68_mem()` で定義されます。
+* ROM の内容は `sbc6800_state::machine_reset()` 内の `memcpy()` 行で読み込まれます。
+* ROM データは [src/sbc6800/sbc6800.h](src/sbc6800/sbc6800.h) で定義されています。内容は Mikbug と MPU リセットベクタです。
 
 ## sbc6809
 
@@ -39,26 +51,7 @@ TARGET = sbc6800
 * ファイル構成は sbc6800 と同様
 * [src/devices/cpu/m6502](src/devices/cpu/m6502) 以下を本家 mame から復元
 
-## 作成手順
-
-sbc6800 の場合を例として挙げます。
-
-* [src/emuz80](src/emuz80) をひな形に
-* [src/sbc6800](src/sbc6800) 以下にマシンを記述
-    * 起動時に RESET ピン操作が必要 (sbc6809, pldr6502 では不要)
-* [src/devices/cpu/m6800](src/devices/cpu/m6800) 以下を本家 mame から復元
-    * 本家 mame のコミット [4358422](https://github.com/mamedev/mame/tree/4358422) を使用する (mame-sbc 系統がフォークしたコミットに十分近いと推測される)
-* ビルドスクリプトを編集
-    * [scripts/target/sbc6800/sbc6800.lua](scripts/target/sbc6800/sbc6800.lua) (新規作成)
-    * [scripts/src/cpu.lua](scripts/src/cpu.lua) (m6800 関連行をコメント解除)
-
-## sbc6800 利用のヒント
-
-* メモリマップは [src/sbc6800/sbc6800.cpp](src/sbc6800/sbc6800.cpp) の `sbc6800_state::m68_mem()` で定義されます。
-* ROM の内容は `sbc6800_state::machine_reset()` 内の `memcpy()` 行で読み込まれます。
-* ROM データは [src/sbc6800/sbc6800.h](src/sbc6800/sbc6800.h) で定義されています。内容は Mikbug と MPU リセットベクタです。
-
-## pldr6502 の CPU 切り替え
+### pldr6502 の CPU 切り替え
 
 [src/pldr6502/pldr6502.cpp](src/pldr6502/pldr6502.cpp) 冒頭付近の `#define P65TYPE` 行を編集してから pldr6502 を make します。
 
