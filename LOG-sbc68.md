@@ -1,8 +1,8 @@
-# sbc6800/sbc6809/pldr6502 作成ログ
+# sbc6800/sbc6809/pldr6502 作業メモ
 
 この項は @ryu10 が記述しました。
 
-## ターゲットのビルド手順
+## ターゲット指定とビルド
 
 `makefile` の次のいずれか 1 行をコメント解除します。
 
@@ -55,7 +55,7 @@ hexdump -v -e '8/1 "0x%02x, " "\n"' unimon.bin > unimon_c_hex.txt
 
 ## pldr6502
 
-ほうめい @houmei 様作 PLDR6502 のエミュレータです。元々は SBC6800 のパイルダーカード (ドーターカード) として設計されています。Universal Monitor が起動します。
+ほうめい @houmei 様作 PLDR6502 のエミュレータです。元々は SBC6800 のドータカード (パイルダーカード) として設計されています。Universal Monitor が起動します。
 
 * ファイル構成は sbc6800 と同様
 * [src/devices/cpu/m6502](src/devices/cpu/m6502) 以下を本家 mame から復元
