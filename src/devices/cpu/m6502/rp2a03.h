@@ -13,7 +13,7 @@
 #pragma once
 
 #include "m6502.h"
-#include "sound/nes_apu.h"
+// #include "sound/nes_apu.h"
 
 class rp2a03_core_device : public m6502_device {
 public:
@@ -41,31 +41,31 @@ protected:
 private:
 };
 
-class rp2a03_device : public rp2a03_core_device, public device_mixer_interface {
-public:
-	rp2a03_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
+// class rp2a03_device : public rp2a03_core_device, public device_mixer_interface {
+// public:
+// 	rp2a03_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
-	void rp2a03_map(address_map &map) ATTR_COLD;
+// 	void rp2a03_map(address_map &map) ATTR_COLD;
 
-protected:
-	rp2a03_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
+// protected:
+// 	rp2a03_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
-	required_device<nesapu_device> m_apu;
+// 	required_device<nesapu_device> m_apu;
 
-	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+// 	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
-	void apu_irq(int state);
-	uint8_t apu_read_mem(offs_t offset);
-};
+// 	void apu_irq(int state);
+// 	uint8_t apu_read_mem(offs_t offset);
+// };
 
-class rp2a03g_device : public rp2a03_device
-{
-public:
-	rp2a03g_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
+// class rp2a03g_device : public rp2a03_device
+// {
+// public:
+// 	rp2a03g_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
-protected:
-	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
-};
+// protected:
+// 	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
+// };
 
 /* These are the official XTAL values and clock rates used by Nintendo for
    manufacturing throughout the production of the 2A03. PALC_APU_CLOCK is
@@ -85,7 +85,7 @@ enum {
 };
 
 DECLARE_DEVICE_TYPE(RP2A03_CORE, rp2a03_core_device)
-DECLARE_DEVICE_TYPE(RP2A03,      rp2a03_device)
-DECLARE_DEVICE_TYPE(RP2A03G,     rp2a03g_device)
+// DECLARE_DEVICE_TYPE(RP2A03,      rp2a03_device)
+// DECLARE_DEVICE_TYPE(RP2A03G,     rp2a03g_device)
 
 #endif // MAME_CPU_M6502_RP2A03_H

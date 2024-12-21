@@ -23,6 +23,7 @@ TARGET = emuz80
 # TARGET = sbc8080
 # TARGET = sbc6800
 # TARGET = sbc6809
+# TARGET = pldr6502
 # SUBTARGET = tiny
 # TOOLS = 1
 # EMULATOR = 1

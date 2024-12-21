@@ -3,7 +3,9 @@
 
 // sbc6800 binary
 // source code: see sbc6800.m6800
+
 #define MIKBUG 1
+// #define UNIMON 1
 
 #ifdef MIKBUG
 // from 0xe000
@@ -1034,4 +1036,8 @@ static const uint8_t sbc6800_binary[] =
 	0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 	0xe0, 0x00, 0xe1, 0x13, 0xe0, 0x05, 0xe0, 0xd0,
 };
+#endif
+
+#ifdef UNIMON
+#include "unimon6800.h"
 #endif
