@@ -3987,3 +3987,42 @@ kuma@LAURELEY:~/mame-sbc$
 
 1,0,1,0, ... が繰り返されていることがわかる。
 
+## uart_tty.cpp/.h ... 汎用の UART デバイス
+
+汎用の UART デバイスを作成し、`src/devices/machine/uart_tty.cpp` に置きました。
+
+```
+#include "machine/uart_tty.h"
+```
+
+`uart_device` クラス定義をインクルードしたうえで、`xxxx_state` クラス定義に
+
+```
+	required_device<uart_device> m_uart;
+```
+
+で `m_uart` メンバを追加したうえで、
+
+`xxxx_state` クラスの適当な関数に
+
+```
+	UART(config, m_uart, 9600);
+```
+
+```
+uint8_t sbc6800_state::uart_dreg_r() { return m_uart->data_r(); }
+void    sbc6800_state::uart_dreg_w(uint8_t data) { m_uart->data_w(data); }
+uint8_t sbc6800_state::uart_creg_r() {	return m_uart->status_r(); }
+```
+
+メンバ関数定義を追加し、map関数で所望のアドレスにこれらメンバ関数をマッピングする。
+
+これで 6850 相当のステータスレジスタ(bit0: RxRDY, bit1: TxRDY)
+
+## v0.996 タグ付与 ... 現時点でいったん完成 C105 バージョン
+
+`@ryu10` さんが sbc6800, sbc6809, pldr6502 を作成され、プルリクエストを経て本リポジトリにマージさせてもらいました。
+
+`osd.h`, `osd_linux.c` を使わなくなりましたので、これらのソースを削除しました。
+
+ここで v0.996 タグを付与しました。
