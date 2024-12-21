@@ -10,8 +10,6 @@ function standalone()
 		MAME_DIR .. "src/sbc6800/sbc6800.cpp",
 		MAME_DIR .. "src/sbc6800/sbc6800.h",
 		MAME_DIR .. "src/sbc6800/interface.h",
-		MAME_DIR .. "src/sbc6800/osd.h",
-		MAME_DIR .. "src/sbc6800/osd_linux.c",
 	}
 end
 

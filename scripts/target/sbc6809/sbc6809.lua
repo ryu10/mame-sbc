@@ -11,8 +11,6 @@ function standalone()
 		MAME_DIR .. "src/sbc6809/sbc6809.cpp",
 		MAME_DIR .. "src/sbc6809/sbc6809.h",
 		MAME_DIR .. "src/sbc6809/interface.h",
-		MAME_DIR .. "src/sbc6809/osd.h",
-		MAME_DIR .. "src/sbc6809/osd_linux.c",
 	}
 end
 
