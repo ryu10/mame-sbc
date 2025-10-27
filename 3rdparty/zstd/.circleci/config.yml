@@ -30,7 +30,7 @@ jobs:
           name: Test
           command: |
             make gnu90build; make clean
-            make gnu99build; make clean
+            make c99build; make clean
             make ppc64build V=1; make clean
             make ppcbuild   V=1; make clean
             make armbuild   V=1; make clean

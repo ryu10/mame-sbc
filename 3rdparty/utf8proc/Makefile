@@ -10,7 +10,7 @@ PERL=perl
 # compiler settings
 CFLAGS ?= -O2
 PICFLAG = -fPIC
-C99FLAG = -std=c99
+C99FLAG = 
 WCFLAGS = -Wsign-conversion -Wall -Wextra -pedantic
 UCFLAGS = $(CPPFLAGS) $(CFLAGS) $(PICFLAG) $(C99FLAG) $(WCFLAGS) -DUTF8PROC_EXPORTS $(UTF8PROC_DEFINES)
 LDFLAG_SHARED = -shared

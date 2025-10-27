@@ -147,7 +147,7 @@
 			CONFIGURATION_TEMP_DIR             = "$(OBJROOT)",
 			ENABLE_STRICT_OBJC_MSGSEND         = "YES",
 			ENABLE_TESTABILITY                 = "YES",
-			GCC_C_LANGUAGE_STANDARD            = "gnu99",
+			GCC_C_LANGUAGE_STANDARD            = "c99",
 			GCC_NO_COMMON_BLOCKS               = "YES",
 			GCC_PREPROCESSOR_DEFINITIONS       = cfg.defines,
 			GCC_SYMBOLS_PRIVATE_EXTERN         = "NO",

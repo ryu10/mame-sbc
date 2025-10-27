@@ -30,7 +30,7 @@
  */
 
 /* This is the preferred location of all CPP hackery to make $random_compiler
- * work like something approaching a C99 (or maybe more accurately GNU99)
+ * work like something approaching a C99 (or maybe more accurately c99)
  * compiler.
  *
  * It is assumed that this header will be included after "config.h".

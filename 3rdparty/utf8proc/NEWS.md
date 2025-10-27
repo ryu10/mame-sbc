@@ -199,7 +199,7 @@
 - More fine-grained Makefile variables (`PICFLAG` etcetera), so that
   compilation flags can be selectively overridden, and in particular
   so that `CFLAGS` can be changed without accidentally eliminating
-  necessary flags like `-fPIC` and `-std=c99` ([#43]).
+  necessary flags like `-fPIC` and `` ([#43]).
 
 - Updated character-width tables based on Unifont 8.0.01 ([#51]) and
   the Unicode 8 character categories ([#47]).

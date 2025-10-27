@@ -733,7 +733,7 @@ end
 	--we compile C-only to C99 standard with GNU extensions
 
 	buildoptions_c {
-		"-std=gnu99",
+		"",
 	}
 
 local version = str_to_version(_OPTIONS["gcc_version"])

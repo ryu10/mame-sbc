@@ -5033,7 +5033,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 $ac_c_conftest_c99_program
 _ACEOF
-for ac_arg in '' -std=gnu99 -std=c99 -c99 -qlanglvl=extc1x -qlanglvl=extc99 -AC99 -D_STDC_C99=
+for ac_arg in ''   -c99 -qlanglvl=extc1x -qlanglvl=extc99 -AC99 -D_STDC_C99=
 do
   CC="$ac_save_CC $ac_arg"
   if ac_fn_c_try_compile "$LINENO"

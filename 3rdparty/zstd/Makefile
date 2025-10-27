@@ -391,7 +391,7 @@ endif
 # target specific tests
 #------------------------------------------------------------------------
 ifneq (,$(filter $(HOST_OS),MSYS POSIX))
-.PHONY: cmakebuild c89build gnu90build c99build gnu99build c11build bmix64build bmix32build bmi32build staticAnalyze
+.PHONY: cmakebuild c89build gnu90build c99build c99build c11build bmix64build bmix32build bmi32build staticAnalyze
 cmakebuild:
 	cmake --version
 	$(RM) -r $(BUILDIR)/cmake/build
@@ -412,11 +412,11 @@ gnu90build: clean
 
 c99build: clean
 	$(CC) -v
-	CFLAGS="-std=c99 -Werror -O0" $(MAKE) allmost
+	CFLAGS=" -Werror -O0" $(MAKE) allmost
 
-gnu99build: clean
+c99build: clean
 	$(CC) -v
-	CFLAGS="-std=gnu99 -Werror -O0" $(MAKE) allmost
+	CFLAGS=" -Werror -O0" $(MAKE) allmost
 
 c11build: clean
 	$(CC) -v

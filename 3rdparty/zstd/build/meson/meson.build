@@ -14,7 +14,7 @@ project('zstd',
   default_options : [
     # There shouldn't be any need to force a C standard convention for zstd
     # but in case one would want that anyway, this can be done here.
-    # 'c_std=gnu99',
+    # 'c_std=c99',
     # c++11 standard is useful for pzstd
     'cpp_std=c++11',
     'buildtype=release',
